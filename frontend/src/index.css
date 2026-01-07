@@ -1,0 +1,7 @@
+@import "tailwindcss";
+@import "@fontsource/poppins";
+
+body {
+  background-color: #f5f2f2;
+  font-family: "Poppins", sans-serif;
+}
