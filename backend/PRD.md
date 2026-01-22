@@ -1,4 +1,5 @@
 # Product Requirements Document (PRD)
+
 ## Backend API - Worklist
 
 ---
@@ -139,6 +140,7 @@ cors:
 ```
 
 **Ventajas del Enfoque YAML:**
+
 - Separación de configuración y código
 - Fácil modificación sin recompilar
 - Soporte para múltiples entornos (dev, staging, prod)
@@ -163,6 +165,7 @@ Almacena información de usuarios registrados.
 | `created_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP | Fecha de registro |
 
 **Índices:**
+
 - Índice único en `email` para búsquedas rápidas y prevención de duplicados
 
 #### Tabla: `refresh_tokens`
@@ -178,9 +181,11 @@ Almacena refresh tokens activos para validación y revocación.
 | `created_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP | Fecha de creación |
 
 **Relaciones:**
+
 - `user_id` → `users.id` con `ON DELETE CASCADE` (eliminar tokens al borrar usuario)
 
 **Índices:**
+
 - Índice único en `token` para validación rápida
 - Índice en `user_id` para consultas por usuario
 
@@ -224,6 +229,7 @@ http://localhost:30200
 **Endpoint:** `POST /api/auth/register`
 
 **Request Body:**
+
 ```json
 {
   "usuario": "Juan Pérez",
@@ -233,11 +239,13 @@ http://localhost:30200
 ```
 
 **Validaciones:**
+
 - Todos los campos son obligatorios
 - Email debe ser único en el sistema
 - Password se hashea con bcrypt (10 rounds)
 
 **Response 201 (Éxito):**
+
 ```json
 {
   "mensaje": "Usuario registrado exitosamente",
@@ -250,7 +258,9 @@ http://localhost:30200
 ```
 
 **Errores:**
+
 - `400 Bad Request`: Campos faltantes o email duplicado
+
   ```json
   { "mensaje": "Todos los campos son obligatorios" }
   { "mensaje": "El usuario ya existe" }
@@ -265,6 +275,7 @@ http://localhost:30200
 **Endpoint:** `POST /api/auth/login`
 
 **Request Body:**
+
 ```json
 {
   "email": "juan@example.com",
@@ -273,6 +284,7 @@ http://localhost:30200
 ```
 
 **Proceso:**
+
 1. Validar credenciales con bcrypt
 2. Generar Access Token (15 min)
 3. Generar Refresh Token (7 días)
@@ -280,6 +292,7 @@ http://localhost:30200
 5. Retornar ambos tokens + datos de usuario
 
 **Response 200 (Éxito):**
+
 ```json
 {
   "mensaje": "Login exitoso",
@@ -294,6 +307,7 @@ http://localhost:30200
 ```
 
 **Payload del Access Token:**
+
 ```json
 {
   "id": "550e8400-e29b-41d4-a716-446655440000",
@@ -304,6 +318,7 @@ http://localhost:30200
 ```
 
 **Errores:**
+
 - `400 Bad Request`: Campos faltantes
 - `401 Unauthorized`: Credenciales inválidas
 
@@ -316,6 +331,7 @@ http://localhost:30200
 **Endpoint:** `POST /api/auth/refresh`
 
 **Request Body:**
+
 ```json
 {
   "tokenActualizacion": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
@@ -323,12 +339,14 @@ http://localhost:30200
 ```
 
 **Proceso:**
+
 1. Verificar firma del Refresh Token
 2. Validar existencia en BD
 3. Verificar no expiración
 4. Generar nuevo Access Token (15 min)
 
 **Response 200 (Éxito):**
+
 ```json
 {
   "mensaje": "Token renovado exitosamente",
@@ -337,6 +355,7 @@ http://localhost:30200
 ```
 
 **Errores:**
+
 - `400 Bad Request`: Token no proporcionado
 - `401 Unauthorized`: Token inválido, expirado o revocado
 
@@ -349,6 +368,7 @@ http://localhost:30200
 **Endpoint:** `POST /api/auth/logout`
 
 **Request Body:**
+
 ```json
 {
   "tokenActualizacion": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
@@ -356,10 +376,12 @@ http://localhost:30200
 ```
 
 **Proceso:**
+
 1. Eliminar Refresh Token de la BD
 2. El Access Token expira naturalmente (15 min)
 
 **Response 200 (Éxito):**
+
 ```json
 {
   "mensaje": "Logout exitoso"
@@ -367,6 +389,7 @@ http://localhost:30200
 ```
 
 **Errores:**
+
 - `400 Bad Request`: Token no proporcionado
 
 ---
@@ -378,9 +401,151 @@ http://localhost:30200
 **Endpoint:** `GET /prueba`
 
 **Response 200:**
+
 ```
 ¡Hola Mundo! Backend con TypeScript y SQLite funcionando
 ```
+
+---
+
+#### 6️⃣ Roles
+
+**Propósito:** Gestión de roles de usuario en el sistema.
+
+**Endpoint:** `GET /api/roles`
+
+**Response 200 (Éxito):**
+
+```json
+[
+  {
+    "id": 1,
+    "name": "owner"
+  },
+  {
+    "id": 2,
+    "name": "member"
+  }
+]
+```
+
+---
+
+#### 7️⃣ Proyectos
+
+**Base Endpoint:** `/api/projects`
+
+##### Crear Proyecto
+
+**Endpoint:** `POST /api/projects`
+**Headers:** `Authorization: Bearer <token>`
+
+**Request Body:**
+
+```json
+{
+  "nombre": "Nuevo Proyecto",
+  "descripcion": "Descripción opcional",
+  "miembros": ["uuid-usuario-1", "uuid-usuario-2"]
+}
+```
+
+**Response 201 (Éxito):**
+
+```json
+{
+  "mensaje": "Proyecto creado exitosamente",
+  "proyecto": {
+    "id": "uuid-proyecto",
+    "nombre": "Nuevo Proyecto",
+    "descripcion": "Descripción opcional",
+    "creadorId": "uuid-creador",
+    "estado": "active",
+    "creadoEn": "2025-01-01T00:00:00.000Z",
+    "actualizadoEn": "2025-01-01T00:00:00.000Z"
+  }
+}
+```
+
+##### Listar Proyectos
+
+**Endpoint:** `GET /api/projects`
+**Propósito:** Listar todos los proyectos donde el usuario es dueño o miembro.
+
+**Response 200 (Éxito):**
+
+```json
+[
+  {
+    "id": "uuid-proyecto",
+    "nombre": "Mi Proyecto",
+    "rol": "owner",
+    "estado": "active"
+  }
+]
+```
+
+##### Obtener Proyecto Detallado
+
+**Endpoint:** `GET /api/projects/:id`
+
+**Response 200 (Éxito):**
+
+```json
+{
+  "id": "uuid-proyecto",
+  "nombre": "Mi Proyecto",
+  "miembros": [
+    {
+      "id": "uuid-usuario",
+      "nombre": "Juan",
+      "email": "juan@example.com",
+      "rol": "owner",
+      "fechaUnion": "2025-01-01"
+    }
+  ]
+}
+```
+
+##### Modificar Proyecto
+
+**Endpoint:** `PUT /api/projects/:id`
+**Permiso:** Solo Owner
+
+**Request Body:**
+
+```json
+{
+  "nombre": "Nuevo Nombre",
+  "descripcion": "Nueva descripción"
+}
+```
+
+##### Finalizar Proyecto
+
+**Endpoint:** `PATCH /api/projects/:id/finish`
+**Permiso:** Solo Owner
+**Efecto:** Cambia estado a `finished`.
+
+##### Eliminar Proyecto
+
+**Endpoint:** `DELETE /api/projects/:id`
+**Permiso:** Solo Owner
+
+##### Gestionar Miembros
+
+**Agregar Miembro:**
+`POST /api/projects/:id/members`
+
+```json
+{
+  "usuarioId": "uuid-usuario-nuevo",
+  "rolId": 2
+}
+```
+
+**Eliminar Miembro:**
+`DELETE /api/projects/:id/members/:userId`
 
 ---
 
@@ -391,6 +556,7 @@ http://localhost:30200
 #### Access Token (Corta Duración)
 
 **Características:**
+
 - **Duración:** 15 minutos
 - **Propósito:** Autenticar peticiones a recursos protegidos
 - **Almacenamiento Cliente:** Memoria (variable JavaScript), **NO** localStorage/sessionStorage
@@ -398,6 +564,7 @@ http://localhost:30200
 - **Algoritmo:** HS256 (HMAC-SHA256)
 
 **Ventajas:**
+
 - Minimiza ventana de ataque si es robado
 - No requiere consulta a BD en cada request
 - Stateless
@@ -405,6 +572,7 @@ http://localhost:30200
 #### Refresh Token (Larga Duración)
 
 **Características:**
+
 - **Duración:** 7 días
 - **Propósito:** Renovar Access Tokens sin requerir login
 - **Almacenamiento Cliente:** httpOnly cookie o secure storage
@@ -413,6 +581,7 @@ http://localhost:30200
 - **Revocable:** Puede eliminarse de BD para invalidar
 
 **Ventajas:**
+
 - Permite sesiones largas sin comprometer seguridad
 - Revocación inmediata desde servidor
 - Auditoría de sesiones activas
@@ -433,6 +602,7 @@ http://localhost:30200
 
 > [!CAUTION]
 > **Antes de producción, DEBES cambiar:**
+>
 > 1. `accessTokenSecret` y `refreshTokenSecret` por valores criptográficamente seguros (mínimo 256 bits)
 > 2. `cors.origin` a tu dominio específico (no usar `*`)
 > 3. Configurar HTTPS/TLS en el servidor
@@ -542,12 +712,14 @@ http://localhost:30200
 ### ¿Por qué SQLite?
 
 **Ventajas:**
+
 - ✅ Zero-configuration
 - ✅ Perfecto para desarrollo y MVPs
 - ✅ Portabilidad (archivo único)
 - ✅ Suficiente para <100k usuarios
 
 **Limitaciones:**
+
 - ❌ Concurrencia limitada (writes secuenciales)
 - ❌ No recomendado para alta carga
 
@@ -563,6 +735,7 @@ http://localhost:30200
 ### ¿Por qué Refresh Tokens en BD?
 
 **Alternativas Consideradas:**
+
 1. **Solo Access Tokens**: Requiere logins frecuentes (mala UX)
 2. **Refresh Tokens en JWT**: No revocables (riesgo de seguridad)
 3. **Refresh Tokens en BD** ✅: Balance perfecto seguridad/UX
@@ -715,6 +888,7 @@ Todas las respuestas de error siguen este formato consistente:
 ```
 
 **Códigos HTTP Utilizados:**
+
 - `200 OK`: Operación exitosa
 - `201 Created`: Recurso creado exitosamente
 - `400 Bad Request`: Error de validación o datos faltantes

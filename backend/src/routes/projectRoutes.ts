@@ -19,21 +19,27 @@ const router = Router();
  * @swagger
  * components:
  *   schemas:
- *     Project:
+ *     Proyecto:
  *       type: object
  *       properties:
  *         id:
  *           type: string
  *           format: uuid
- *         name:
+ *         nombre:
  *           type: string
- *         description:
+ *         descripcion:
  *           type: string
- *         owner_id:
+ *         creadorId:
  *           type: string
- *         status:
+ *         estado:
  *           type: string
  *           enum: [active, finished]
+ *         creadoEn:
+ *           type: string
+ *           format: date-time
+ *         actualizadoEn:
+ *           type: string
+ *           format: date-time
  */
 
 /**
@@ -51,19 +57,20 @@ const router = Router();
  *           schema:
  *             type: object
  *             required:
- *               - name
+ *               - nombre
  *             properties:
- *               name:
+ *               nombre:
  *                 type: string
- *               description:
+ *               descripcion:
  *                 type: string
- *               members:
+ *               miembros:
  *                 type: array
  *                 items:
  *                   type: string
+ *                   description: IDs de los usuarios a agregar
  *     responses:
  *       201:
- *         description: Proyecto creado
+ *         description: Proyecto creado exitosamente
  *   get:
  *     summary: Listar proyectos del usuario
  *     tags: [Projects]
@@ -72,6 +79,12 @@ const router = Router();
  *     responses:
  *       200:
  *         description: Lista de proyectos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Proyecto'
  */
 router.post('/', verificarToken, crear);
 router.get('/', verificarToken, listar);
@@ -92,7 +105,7 @@ router.get('/', verificarToken, listar);
  *           type: string
  *     responses:
  *       200:
- *         description: Detalles del proyecto
+ *         description: Detalles del proyecto con miembros
  *       404:
  *         description: Proyecto no encontrado
  *   put:
@@ -112,9 +125,9 @@ router.get('/', verificarToken, listar);
  *           schema:
  *             type: object
  *             properties:
- *               name:
+ *               nombre:
  *                 type: string
- *               description:
+ *               descripcion:
  *                 type: string
  *     responses:
  *       200:
@@ -136,6 +149,25 @@ router.get('/', verificarToken, listar);
  */
 router.get('/:id', verificarToken, obtenerUno);
 router.put('/:id', verificarToken, actualizar);
+
+/**
+ * @swagger
+ * /api/projects/{id}/finish:
+ *   patch:
+ *     summary: Finalizar proyecto
+ *     tags: [Projects]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Proyecto finalizado
+ */
 router.patch('/:id/finish', verificarToken, finalizar);
 router.delete('/:id', verificarToken, eliminar);
 
@@ -160,15 +192,43 @@ router.delete('/:id', verificarToken, eliminar);
  *           schema:
  *             type: object
  *             required:
- *               - userId
+ *               - usuarioId
  *             properties:
- *               userId:
+ *               usuarioId:
  *                 type: string
+ *                 description: ID del usuario a agregar
+ *               rolId:
+ *                 type: integer
+ *                 description: ID del rol. Si no se envía usa el por defecto (member).
  *     responses:
  *       200:
  *         description: Miembro agregado
  */
 router.post('/:id/members', verificarToken, agregarMiembroController);
+
+/**
+ * @swagger
+ * /api/projects/{id}/members/{userId}:
+ *   delete:
+ *     summary: Eliminar miembro del proyecto
+ *     tags: [Projects]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Miembro eliminado correctamente
+ */
 router.delete('/:id/members/:userId', verificarToken, eliminarMiembroController);
 
 export default router;

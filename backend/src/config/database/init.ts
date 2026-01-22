@@ -27,6 +27,18 @@ export const inicializarTablas = async () => {
             )
         `);
 
+        // Tabla de roles
+        await consulta(`
+            CREATE TABLE IF NOT EXISTS roles (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name VARCHAR(50) NOT NULL UNIQUE
+            )
+        `);
+
+        // Seed de roles (Insertar si no existen)
+        await consulta(`INSERT OR IGNORE INTO roles (name) VALUES ('owner')`);
+        await consulta(`INSERT OR IGNORE INTO roles (name) VALUES ('member')`);
+
         // Tabla de proyectos
         await consulta(`
             CREATE TABLE IF NOT EXISTS projects (
@@ -46,11 +58,12 @@ export const inicializarTablas = async () => {
             CREATE TABLE IF NOT EXISTS project_members (
                 project_id VARCHAR(36) NOT NULL,
                 user_id VARCHAR(36) NOT NULL,
-                role VARCHAR(20) DEFAULT 'member',
+                role_id INTEGER NOT NULL DEFAULT 2,
                 joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 PRIMARY KEY (project_id, user_id),
                 FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
-                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                FOREIGN KEY (role_id) REFERENCES roles(id)
             )
         `);
 
