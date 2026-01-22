@@ -54,7 +54,9 @@ export function Login() {
                 Iniciaste sesión exitosamente
               </p>
             )}
-            <button className="py-2.5 bg-blue-400 text-white rounded-lg text-lg hover:bg-blue-500 hover:scale-105 active:scale-90 transition-all cursor-pointer mt-2">
+            <button className="py-2.5 bg-sky-500 text-white rounded-lg text-lg
+            hover:bg-sky-600 hover:scale-105 active:scale-90 transition-all
+            cursor-pointer mt-2">
               {loading ? "Cargando..." : "Iniciar Sesión"}
             </button>
           </form>
