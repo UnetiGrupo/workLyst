@@ -431,6 +431,74 @@ http://localhost:30200
 
 ---
 
+#### 8️⃣ Usuarios
+
+**Base Endpoint:** `/api/users`
+
+##### Listar o Buscar Usuarios
+
+**Endpoint:** `GET /api/users`
+**Query Params:**
+
+- `nombre` (opcional): Nombre del usuario (Busca coincidencias parciales)
+- `email` (opcional): Email del usuario (Busca coincidencia exacta)
+
+**Response 200 (Éxito):**
+
+```json
+[
+  {
+    "id": "uuid-usuario",
+    "usuario": "Juan Perez",
+    "email": "juan@example.com",
+    "created_at": "2025-01-01T00:00:00.000Z"
+  }
+]
+```
+
+##### Obtener Usuario por ID
+
+**Endpoint:** `GET /api/users/:id`
+
+**Response 200 (Éxito):**
+
+```json
+{
+  "id": "uuid-usuario",
+  "usuario": "Juan Perez",
+  "email": "juan@example.com",
+  "created_at": "2025-01-01T00:00:00.000Z"
+}
+```
+
+##### Actualizar Información de Usuario
+
+**Endpoint:** `PUT /api/users/:id`
+**Permiso:** Solo el propio usuario (Dueño de la cuenta)
+
+**Request Body:**
+
+```json
+{
+  "usuario": "Nuevo Nombre",
+  "email": "nuevo@email.com"
+}
+```
+
+**Response 200 (Éxito):**
+
+```json
+{
+  "mensaje": "Usuario actualizado exitosamente",
+  "usuario": {
+    "id": "uuid-usuario",
+    "usuario": "Nuevo Nombre",
+    "email": "nuevo@email.com",
+    "created_at": "..."
+  }
+}
+```
+
 #### 7️⃣ Proyectos
 
 **Base Endpoint:** `/api/projects`

@@ -1,4 +1,4 @@
-import { ejecutar, obtener } from '../config/db';
+import { ejecutar, obtener, consulta } from '../config/db';
 import { v4 as uuidv4 } from 'uuid';
 
 export interface Usuario {
@@ -99,4 +99,67 @@ export const buscarUsuarioPorId = async (id: string): Promise<Usuario | undefine
         email: resultado.email,
         created_at: resultado.created_at
     };
+};
+
+export const obtenerTodosLosUsuarios = async (): Promise<Usuario[]> => {
+    const sql = `SELECT id, name, email, created_at FROM users`;
+    const resultados = await consulta(sql) as any[];
+    return resultados.map(r => ({
+        id: r.id,
+        usuario: r.name,
+        email: r.email,
+        created_at: r.created_at
+    }));
+};
+
+export const buscarUsuarios = async (filtros: { nombre?: string, email?: string }): Promise<Usuario[]> => {
+    const condiciones: string[] = [];
+    const params: any[] = [];
+
+    if (filtros.email) {
+        condiciones.push(`email = ?`);
+        params.push(filtros.email);
+    }
+
+    if (filtros.nombre) {
+        const palabras = filtros.nombre.trim().split(/\s+/);
+        if (palabras.length > 0) {
+            palabras.forEach(p => {
+                condiciones.push(`name LIKE ?`);
+                params.push(`%${p}%`);
+            });
+        }
+    }
+
+    if (condiciones.length === 0) return [];
+
+    const sql = `SELECT id, name, email, created_at FROM users WHERE ${condiciones.join(' AND ')}`;
+    const resultados = await consulta(sql, params) as any[];
+
+    return resultados.map(r => ({
+        id: r.id,
+        usuario: r.name,
+        email: r.email,
+        created_at: r.created_at
+    }));
+};
+
+export const actualizarUsuario = async (id: string, datos: Partial<Omit<Usuario, 'id' | 'password' | 'created_at'>>) => {
+    const campos: string[] = [];
+    const valores: any[] = [];
+
+    if (datos.usuario) {
+        campos.push('name = ?');
+        valores.push(datos.usuario);
+    }
+    if (datos.email) {
+        campos.push('email = ?');
+        valores.push(datos.email);
+    }
+
+    if (campos.length === 0) return;
+
+    valores.push(id);
+    const sql = `UPDATE users SET ${campos.join(', ')} WHERE id = ?`;
+    await ejecutar(sql, valores);
 };
