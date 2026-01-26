@@ -499,6 +499,64 @@ http://localhost:30200
 }
 ```
 
+#### 9️⃣ Tareas
+
+**Base URL:** `/api`
+
+##### Crear Tarea en Proyecto
+
+**Endpoint:** `POST /projects/:projectId/tasks`
+
+**Request Body:**
+
+```json
+{
+  "titulo": "Implementar Login",
+  "descripcion": "Usar JWT",
+  "asignado_a": "uuid-usuario-responsable",
+  "fecha_limite": "2025-12-31T23:59:59Z"
+}
+```
+
+##### Listar Tareas de Proyecto
+
+**Endpoint:** `GET /projects/:projectId/tasks`
+
+**Response 200 (Éxito):**
+
+```json
+[
+  {
+    "id": "uuid-tarea",
+    "titulo": "Implementar Login",
+    "estado": "pending",
+    "asignado_a_nombre": "Juan Perez",
+    "creado_en": "..."
+  }
+]
+```
+
+##### Ver Detalle de Tarea
+
+**Endpoint:** `GET /tasks/:id`
+
+##### Actualizar Tarea
+
+**Endpoint:** `PUT /tasks/:id`
+
+**Request Body:**
+
+```json
+{
+  "estado": "in_progress",
+  "asignado_a": "nuevo-uuid-usuario"
+}
+```
+
+##### Eliminar Tarea
+
+**Endpoint:** `DELETE /tasks/:id`
+
 #### 7️⃣ Proyectos
 
 **Base Endpoint:** `/api/projects`

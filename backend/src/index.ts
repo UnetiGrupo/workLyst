@@ -20,6 +20,7 @@ import rutasAuth from './routes/authRoutes';
 import rutasProyectos from './routes/projectRoutes';
 import rutasRoles from './routes/roleRoutes';
 import rutasUsuarios from './routes/userRoutes';
+import rutasTareas from './routes/taskRoutes';
 import { inicializarTablas } from './config/database/init';
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './config/swagger';
@@ -35,6 +36,7 @@ app.use('/api/auth', rutasAuth);
 app.use('/api/projects', rutasProyectos);
 app.use('/api/roles', rutasRoles);
 app.use('/api/users', rutasUsuarios);
+app.use('/api/tasks', rutasTareas);
 
 app.listen(puerto, () => {
     console.log(`Servidor escuchando en http://localhost:${puerto}`);

@@ -9,6 +9,7 @@ import {
     agregarMiembroController,
     eliminarMiembroController
 } from '../controllers/projectController';
+import { crear as crearTarea, listarPorProyecto as listarTareas } from '../controllers/taskController';
 import { verificarToken } from '../middleware/authMiddleware';
 
 const router = Router();
@@ -230,5 +231,66 @@ router.post('/:id/members', verificarToken, agregarMiembroController);
  *         description: Miembro eliminado correctamente
  */
 router.delete('/:id/members/:userId', verificarToken, eliminarMiembroController);
+
+
+/**
+ * @swagger
+ * /api/projects/{projectId}/tasks:
+ *   post:
+ *     summary: Crear tarea en un proyecto
+ *     tags: [Tareas]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: projectId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - titulo
+ *             properties:
+ *               titulo:
+ *                 type: string
+ *               descripcion:
+ *                 type: string
+ *               asignado_a:
+ *                 type: string
+ *                 description: ID del usuario asignado (opcional)
+ *               fecha_limite:
+ *                 type: string
+ *                 format: date-time
+ *     responses:
+ *       201:
+ *         description: Tarea creada
+ *   get:
+ *     summary: Listar tareas de un proyecto
+ *     tags: [Tareas]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: projectId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Lista de tareas
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Tarea'
+ */
+router.post('/:projectId/tasks', verificarToken, crearTarea);
+router.get('/:projectId/tasks', verificarToken, listarTareas);
 
 export default router;

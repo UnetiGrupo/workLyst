@@ -1,0 +1,186 @@
+import { Request, Response } from 'express';
+import { crearTarea, obtenerTareasPorProyecto, actualizarTarea, eliminarTarea, obtenerTareaPorId } from '../models/taskModel';
+import { obtenerMiembrosProyecto } from '../models/projectModel';
+import { AuthRequest } from '../middleware/authMiddleware';
+
+// Helper para verificar membresía
+const verificarMembresia = async (projectId: string, userId: string): Promise<boolean> => {
+    const miembros = await obtenerMiembrosProyecto(projectId);
+    return miembros.some((m: any) => m.id === userId);
+};
+
+export const crear = async (req: AuthRequest, res: Response): Promise<void> => {
+    const projectId = req.params.projectId as string;
+    const { titulo, descripcion, asignado_a, fecha_limite } = req.body;
+    const userId = req.user?.id;
+
+    if (!titulo) {
+        res.status(400).json({ mensaje: 'El título de la tarea es obligatorio' });
+        return;
+    }
+
+    try {
+        if (!userId || !(await verificarMembresia(projectId, userId))) {
+            res.status(403).json({ mensaje: 'No tienes permiso para crear tareas en este proyecto' });
+            return;
+        }
+
+        const nuevaTarea = await crearTarea({
+            project_id: projectId,
+            title: titulo,
+            description: descripcion,
+            assigned_to: asignado_a,
+            due_date: fecha_limite
+        });
+
+        res.status(201).json({
+            mensaje: 'Tarea creada exitosamente',
+            tarea: {
+                id: nuevaTarea.id,
+                proyecto_id: nuevaTarea.project_id,
+                titulo: nuevaTarea.title,
+                descripcion: nuevaTarea.description,
+                estado: nuevaTarea.status,
+                asignado_a: nuevaTarea.assigned_to,
+                fecha_limite: nuevaTarea.due_date,
+                creado_en: nuevaTarea.created_at
+            }
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ mensaje: 'Error al crear la tarea' });
+    }
+};
+
+export const listarPorProyecto = async (req: AuthRequest, res: Response): Promise<void> => {
+    const projectId = req.params.projectId as string;
+    const userId = req.user?.id;
+
+    try {
+        if (!userId || !(await verificarMembresia(projectId, userId))) {
+            res.status(403).json({ mensaje: 'No tienes permiso para ver tareas de este proyecto' });
+            return;
+        }
+
+        const tareas = await obtenerTareasPorProyecto(projectId);
+        const tareasEspanol = tareas.map((t: any) => ({
+            id: t.id,
+            proyecto_id: t.project_id,
+            titulo: t.title,
+            descripcion: t.description,
+            estado: t.status,
+            asignado_a: t.assigned_to,
+            asignado_a_nombre: t.assigned_to_name,
+            fecha_limite: t.due_date,
+            creado_en: t.created_at
+        }));
+
+        res.json(tareasEspanol);
+    } catch (error) {
+        res.status(500).json({ mensaje: 'Error al obtener tareas' });
+    }
+};
+
+export const obtenerDetalle = async (req: AuthRequest, res: Response): Promise<void> => {
+    const id = req.params.id as string;
+    const userId = req.user?.id;
+
+    try {
+        const tarea = await obtenerTareaPorId(id);
+        if (!tarea) {
+            res.status(404).json({ mensaje: 'Tarea no encontrada' });
+            return;
+        }
+
+        // Verificar acceso al proyecto de la tarea
+        if (!userId || !(await verificarMembresia(tarea.project_id, userId))) {
+            res.status(403).json({ mensaje: 'No tienes acceso a esta tarea' });
+            return;
+        }
+
+        res.json({
+            id: tarea.id,
+            proyecto_id: tarea.project_id,
+            titulo: tarea.title,
+            descripcion: tarea.description,
+            estado: tarea.status,
+            asignado_a: tarea.assigned_to,
+            fecha_limite: tarea.due_date,
+            creado_en: tarea.created_at
+        });
+    } catch (error) {
+        res.status(500).json({ mensaje: 'Error al obtener tarea' });
+    }
+};
+
+export const actualizar = async (req: AuthRequest, res: Response): Promise<void> => {
+    const id = req.params.id as string;
+    const { titulo, descripcion, estado, asignado_a, fecha_limite } = req.body;
+    const userId = req.user?.id;
+
+    try {
+        const tarea = await obtenerTareaPorId(id);
+        if (!tarea) {
+            res.status(404).json({ mensaje: 'Tarea no encontrada' });
+            return;
+        }
+
+        if (!userId || !(await verificarMembresia(tarea.project_id, userId))) {
+            res.status(403).json({ mensaje: 'No tienes permiso para modificar esta tarea' });
+            return;
+        }
+
+        const datosActualizados: any = {};
+        if (titulo) datosActualizados.title = titulo;
+        if (descripcion !== undefined) datosActualizados.description = descripcion;
+        if (estado) datosActualizados.status = estado;
+        if (asignado_a !== undefined) datosActualizados.assigned_to = asignado_a;
+        if (fecha_limite !== undefined) datosActualizados.due_date = fecha_limite;
+
+        const tareaActualizada = await actualizarTarea(id, datosActualizados);
+
+        if (!tareaActualizada) {
+            res.status(404).json({ mensaje: 'Error al recuperar tarea actualizada' });
+            return;
+        }
+
+        res.json({
+            mensaje: 'Tarea actualizada',
+            tarea: {
+                id: tareaActualizada.id,
+                proyecto_id: tareaActualizada.project_id,
+                titulo: tareaActualizada.title,
+                descripcion: tareaActualizada.description,
+                estado: tareaActualizada.status,
+                asignado_a: tareaActualizada.assigned_to,
+                fecha_limite: tareaActualizada.due_date,
+                creado_en: tareaActualizada.created_at
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ mensaje: 'Error al actualizar tarea' });
+    }
+};
+
+export const eliminar = async (req: AuthRequest, res: Response): Promise<void> => {
+    const id = req.params.id as string;
+    const userId = req.user?.id;
+
+    try {
+        const tarea = await obtenerTareaPorId(id);
+        if (!tarea) {
+            res.status(404).json({ mensaje: 'Tarea no encontrada' });
+            return;
+        }
+
+        if (!userId || !(await verificarMembresia(tarea.project_id, userId))) {
+            res.status(403).json({ mensaje: 'No tienes permiso para eliminar esta tarea' });
+            return;
+        }
+
+        await eliminarTarea(id);
+        res.json({ mensaje: 'Tarea eliminada exitosamente' });
+    } catch (error) {
+        res.status(500).json({ mensaje: 'Error al eliminar tarea' });
+    }
+};
