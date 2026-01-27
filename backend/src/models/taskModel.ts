@@ -7,7 +7,7 @@ export interface Task {
     assigned_to?: string; // ID del usuario
     title: string;
     description?: string;
-    status: 'pending' | 'in_progress' | 'completed';
+    status: 'pendiente' | 'en_progreso' | 'completada' | 'vencida';
     due_date?: string;
     created_at: string;
     updated_at: string;
@@ -21,7 +21,7 @@ export const inicializarTablaTasks = async () => {
             assigned_to TEXT,
             title TEXT NOT NULL,
             description TEXT,
-            status TEXT DEFAULT 'pending',
+            status TEXT DEFAULT 'pendiente',
             due_date DATETIME,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -39,7 +39,7 @@ export const crearTarea = async (tarea: { project_id: string; assigned_to?: stri
         VALUES (?, ?, ?, ?, ?, ?)
     `;
     await ejecutar(sql, [id, tarea.project_id, tarea.assigned_to || null, tarea.title, tarea.description || null, tarea.due_date || null]);
-    return { id, ...tarea, status: 'pending', created_at: new Date().toISOString() };
+    return { id, ...tarea, status: 'pendiente', created_at: new Date().toISOString() };
 };
 
 export const obtenerTareasPorProyecto = async (projectId: string): Promise<any[]> => {
@@ -51,12 +51,39 @@ export const obtenerTareasPorProyecto = async (projectId: string): Promise<any[]
         WHERE t.project_id = ?
         ORDER BY t.created_at DESC
     `;
-    return await consulta(sql, [projectId]);
+    const tareas = await consulta(sql, [projectId]);
+
+    // Validar fechas vencidas en código
+    const now = new Date();
+    tareas.forEach(t => {
+        if (t.due_date && t.status !== 'completada' && t.status !== 'vencida') {
+            const dueDate = new Date(t.due_date);
+            if (dueDate < now) {
+                t.status = 'vencida';
+                // Actualizar en BD asíncronamente
+                actualizarTarea(t.id, { status: 'vencida' }).catch(err => console.error(`Error auto-updating task ${t.id} to vencida:`, err));
+            }
+        }
+    });
+
+    return tareas;
 };
 
 export const obtenerTareaPorId = async (id: string): Promise<Task | undefined> => {
     const sql = `SELECT * FROM tasks WHERE id = ?`;
-    return await obtener(sql, [id]) as any;
+    const tarea = await obtener(sql, [id]) as any;
+
+    if (tarea && tarea.due_date && tarea.status !== 'completada' && tarea.status !== 'vencida') {
+        const now = new Date();
+        const dueDate = new Date(tarea.due_date);
+        if (dueDate < now) {
+            tarea.status = 'vencida';
+            // Actualizar en BD asíncronamente
+            actualizarTarea(tarea.id, { status: 'vencida' }).catch(err => console.error(`Error auto-updating task ${tarea.id} to vencida:`, err));
+        }
+    }
+
+    return tarea;
 };
 
 export const actualizarTarea = async (id: string, datos: Partial<Task>) => {

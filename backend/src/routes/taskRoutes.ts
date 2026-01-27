@@ -27,14 +27,14 @@ router.use(verificarToken);
  *         descripcion:
  *           type: string
  *         estado:
- *           type: string
- *           enum: [pending, in_progress, completed]
- *         fecha_limite:
- *           type: string
- *           format: date-time
- *         creado_en:
- *           type: string
- *           format: date-time
+          type: string
+          enum: [pendiente, en_progreso, completada, vencida]
+        fecha_limite:
+          type: string
+          format: date-time
+        creado_en:
+          type: string
+          format: date-time
  */
 
 /**
@@ -89,13 +89,13 @@ router.get('/:id', obtenerDetalle);
  *               descripcion:
  *                 type: string
  *               estado:
- *                 type: string
- *                 enum: [pending, in_progress, completed]
- *               asignado_a:
- *                 type: string
- *               fecha_limite:
- *                 type: string
- *                 format: date-time
+                type: string
+                enum: [pendiente, en_progreso, completada, vencida]
+              asignado_a:
+                type: string
+              fecha_limite:
+                type: string
+                format: date-time
  *     responses:
  *       200:
  *         description: Tarea actualizada

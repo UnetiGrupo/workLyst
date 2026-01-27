@@ -19,6 +19,15 @@ export const crear = async (req: AuthRequest, res: Response): Promise<void> => {
         return;
     }
 
+    if (fecha_limite) {
+        const fecha = new Date(fecha_limite);
+        const hoy = new Date();
+        if (fecha < hoy) {
+            res.status(400).json({ mensaje: 'La fecha límite no puede ser anterior a la fecha actual' });
+            return;
+        }
+    }
+
     try {
         if (!userId || !(await verificarMembresia(projectId, userId))) {
             res.status(403).json({ mensaje: 'No tienes permiso para crear tareas en este proyecto' });
@@ -82,10 +91,11 @@ export const listarPorProyecto = async (req: AuthRequest, res: Response): Promis
         }));
 
         res.json(tareasEspanol);
-    } catch (error) {
-        res.status(500).json({ mensaje: 'Error al obtener tareas' });
+    } catch (error: any) {
+        console.error('Error en listarPorProyecto:', error);
+        res.status(500).json({ mensaje: 'Error al obtener tareas', error: error.message });
     }
-};
+}
 
 export const obtenerDetalle = async (req: AuthRequest, res: Response): Promise<void> => {
     const id = req.params.id as string;

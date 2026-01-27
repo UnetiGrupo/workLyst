@@ -32,6 +32,7 @@ const router = Router();
  *           type: string
  *         creadorId:
  *           type: string
+ *           description: Nombre del creador
  *         estado:
  *           type: string
  *           enum: [active, finished]

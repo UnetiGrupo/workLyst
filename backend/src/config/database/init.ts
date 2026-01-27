@@ -84,6 +84,45 @@ export const inicializarTablas = async () => {
             )
         `);
 
+        // Tabla de estatus de grupos
+        await consulta(`
+            CREATE TABLE IF NOT EXISTS group_statuses (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name VARCHAR(50) NOT NULL UNIQUE
+            )
+        `);
+
+        // Seed de estatus de grupos
+        await consulta(`INSERT OR IGNORE INTO group_statuses (name) VALUES ('activo')`);
+        await consulta(`INSERT OR IGNORE INTO group_statuses (name) VALUES ('eliminado')`);
+
+        // Tabla de grupos
+        await consulta(`
+            CREATE TABLE IF NOT EXISTS groups (
+                id VARCHAR(36) PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                description TEXT,
+                owner_id VARCHAR(36) NOT NULL,
+                status_id INTEGER NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE,
+                FOREIGN KEY (status_id) REFERENCES group_statuses(id)
+            )
+        `);
+
+        // Tabla de miembros de grupos
+        await consulta(`
+            CREATE TABLE IF NOT EXISTS group_members (
+                group_id VARCHAR(36) NOT NULL,
+                user_id VARCHAR(36) NOT NULL,
+                joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (group_id, user_id),
+                FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            )
+        `);
+
         // Crear usuario del sistema (IA Bot) si no existe
         const mensajeBot = await consulta(`SELECT * FROM users WHERE email = 'ia_bot@system.local'`);
         if ((mensajeBot as any[]).length === 0) {

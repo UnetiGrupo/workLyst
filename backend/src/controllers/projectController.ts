@@ -18,7 +18,7 @@ const mapearProyecto = (p: any) => ({
     id: p.id,
     nombre: p.name,
     descripcion: p.description,
-    creadorId: p.owner_id,
+    creadorId: p.owner_name || p.owner_id,
     estado: p.status,
     creadoEn: p.created_at,
     actualizadoEn: p.updated_at,

@@ -34,17 +34,23 @@ export const crearProyecto = async (proyecto: { name: string; description?: stri
 
 // Obtener Proyecto por ID
 export const obtenerProyectoPorId = async (id: string): Promise<Project | undefined> => {
-    const sql = `SELECT * FROM projects WHERE id = ?`;
+    const sql = `
+        SELECT p.*, u.name as owner_name
+        FROM projects p
+        JOIN users u ON p.owner_id = u.id
+        WHERE p.id = ?
+    `;
     return await obtener(sql, [id]) as any;
 };
 
 // Obtener Proyectos de un Usuario (incluye donde es owner y donde es miembro)
 export const obtenerProyectosUsuario = async (userId: string): Promise<any[]> => {
     const sql = `
-        SELECT p.*, r.name as role 
+        SELECT p.*, r.name as role, u.name as owner_name
         FROM projects p
         JOIN project_members pm ON p.id = pm.project_id
         JOIN roles r ON pm.role_id = r.id
+        JOIN users u ON p.owner_id = u.id
         WHERE pm.user_id = ?
         ORDER BY p.updated_at DESC
     `;
