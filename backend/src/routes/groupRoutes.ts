@@ -45,7 +45,8 @@ const router = Router();
  *     summary: Crear un nuevo grupo
  *     tags: [Grupos]
  *     security:
- *       - bearerAuth: []
+ *       - apiKeyAuth: []
+ *         bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -53,15 +54,33 @@ const router = Router();
  *           schema:
  *             type: object
  *             required:
- *               - usuarios
+ *               - nombre
  *             properties:
  *               nombre:
  *                 type: string
  *               descripcion:
  *                 type: string
+ *               miembros:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: IDs de los usuarios a agregar inicialmente
  *     responses:
  *       201:
  *         description: Grupo creado exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 mensaje:
+ *                   type: string
+ *                 grupo:
+ *                   $ref: '#/components/schemas/Grupo'
+ *       400:
+ *         description: Nombre del grupo obligatorio
+ *       401:
+ *         description: No autorizado
  */
 router.post('/', verificarToken, crear);
 
@@ -73,7 +92,8 @@ router.post('/', verificarToken, crear);
  *     summary: Listar grupos del usuario
  *     tags: [Grupos]
  *     security:
- *       - bearerAuth: []
+ *       - apiKeyAuth: []
+ *         bearerAuth: []
  *     responses:
  *       200:
  *         description: Lista de grupos
@@ -83,6 +103,8 @@ router.post('/', verificarToken, crear);
  *               type: array
  *               items:
  *                 $ref: '#/components/schemas/Grupo'
+ *       401:
+ *         description: No autorizado
  */
 router.get('/', verificarToken, listarMisGrupos);
 
@@ -94,7 +116,8 @@ router.get('/', verificarToken, listarMisGrupos);
  *     summary: Obtener detalle del grupo
  *     tags: [Grupos]
  *     security:
- *       - bearerAuth: []
+ *       - apiKeyAuth: []
+ *         bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -104,8 +127,31 @@ router.get('/', verificarToken, listarMisGrupos);
  *     responses:
  *       200:
  *         description: Detalle del grupo con miembros
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/Grupo'
+ *                 - type: object
+ *                   properties:
+ *                     miembros:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: string
+ *                           nombre:
+ *                             type: string
+ *                           email:
+ *                             type: string
+ *                           fecha_union:
+ *                             type: string
+ *                             format: date-time
  *       404:
- *         description: Grupo no encontrado
+ *         description: Grupo no encontrado o no activo
+ *       403:
+ *         description: No tienes acceso a este grupo
  */
 router.get('/:id', verificarToken, obtenerDetalle);
 
@@ -117,7 +163,8 @@ router.get('/:id', verificarToken, obtenerDetalle);
  *     summary: Actualizar grupo
  *     tags: [Grupos]
  *     security:
- *       - bearerAuth: []
+ *       - apiKeyAuth: []
+ *         bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -137,6 +184,17 @@ router.get('/:id', verificarToken, obtenerDetalle);
  *     responses:
  *       200:
  *         description: Grupo actualizado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 mensaje:
+ *                   type: string
+ *       403:
+ *         description: Solo el creador puede editar
+ *       404:
+ *         description: Grupo no encontrado
  */
 router.put('/:id', verificarToken, actualizar);
 
@@ -148,7 +206,8 @@ router.put('/:id', verificarToken, actualizar);
  *     summary: Eliminar grupo
  *     tags: [Grupos]
  *     security:
- *       - bearerAuth: []
+ *       - apiKeyAuth: []
+ *         bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -158,6 +217,17 @@ router.put('/:id', verificarToken, actualizar);
  *     responses:
  *       200:
  *         description: Grupo eliminado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 mensaje:
+ *                   type: string
+ *       403:
+ *         description: Solo el creador puede eliminar
+ *       404:
+ *         description: Grupo no encontrado
  */
 router.delete('/:id', verificarToken, eliminar);
 
@@ -169,7 +239,8 @@ router.delete('/:id', verificarToken, eliminar);
  *     summary: Agregar miembro al grupo
  *     tags: [Grupos]
  *     security:
- *       - bearerAuth: []
+ *       - apiKeyAuth: []
+ *         bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -182,6 +253,8 @@ router.delete('/:id', verificarToken, eliminar);
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - usuarios
  *             properties:
  *               usuarios:
  *                 type: array
@@ -190,7 +263,20 @@ router.delete('/:id', verificarToken, eliminar);
  *                 description: Lista de IDs de usuarios a agregar (obligatorio)
  *     responses:
  *       200:
- *         description: Miembro agregado
+ *         description: Miembros agregados
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 mensaje:
+ *                   type: string
+ *       400:
+ *         description: Lista de usuarios requerida
+ *       403:
+ *         description: Solo el creador puede agregar miembros
+ *       404:
+ *         description: Grupo no encontrado
  */
 router.post('/:id/members', verificarToken, agregarMiembroController);
 
@@ -202,7 +288,8 @@ router.post('/:id/members', verificarToken, agregarMiembroController);
  *     summary: Eliminar miembro del grupo
  *     tags: [Grupos]
  *     security:
- *       - bearerAuth: []
+ *       - apiKeyAuth: []
+ *         bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -216,7 +303,20 @@ router.post('/:id/members', verificarToken, agregarMiembroController);
  *           type: string
  *     responses:
  *       200:
- *         description: Miembro eliminado
+ *         description: Miembro eliminado del grupo
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 mensaje:
+ *                   type: string
+ *       400:
+ *         description: No se puede eliminar al creador
+ *       403:
+ *         description: Solo el creador puede eliminar miembros
+ *       404:
+ *         description: Grupo no encontrado
  */
 router.delete('/:id/members/:userId', verificarToken, eliminarMiembroController);
 

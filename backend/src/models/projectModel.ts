@@ -22,7 +22,7 @@ export const crearProyecto = async (proyecto: { name: string; description?: stri
     const id = uuidv4();
     const sql = `
         INSERT INTO projects (id, name, description, owner_id)
-        VALUES (?, ?, ?, ?)
+        VALUES ($1, $2, $3, $4)
     `;
     await ejecutar(sql, [id, proyecto.name, proyecto.description, proyecto.owner_id]);
 
@@ -38,7 +38,7 @@ export const obtenerProyectoPorId = async (id: string): Promise<Project | undefi
         SELECT p.*, u.name as owner_name
         FROM projects p
         JOIN users u ON p.owner_id = u.id
-        WHERE p.id = ?
+        WHERE p.id = $1
     `;
     return await obtener(sql, [id]) as any;
 };
@@ -51,7 +51,7 @@ export const obtenerProyectosUsuario = async (userId: string): Promise<any[]> =>
         JOIN project_members pm ON p.id = pm.project_id
         JOIN roles r ON pm.role_id = r.id
         JOIN users u ON p.owner_id = u.id
-        WHERE pm.user_id = ?
+        WHERE pm.user_id = $1
         ORDER BY p.updated_at DESC
     `;
     return await consulta(sql, [userId]);
@@ -61,24 +61,25 @@ export const obtenerProyectosUsuario = async (userId: string): Promise<any[]> =>
 export const actualizarProyecto = async (id: string, datos: Partial<Project>) => {
     const updates: string[] = [];
     const values: any[] = [];
+    let paramIndex = 1;
 
     if (datos.name) {
-        updates.push('name = ?');
+        updates.push(`name = $${paramIndex++}`);
         values.push(datos.name);
     }
     if (datos.description !== undefined) {
-        updates.push('description = ?');
+        updates.push(`description = $${paramIndex++}`);
         values.push(datos.description);
     }
     if (datos.status) {
-        updates.push('status = ?');
+        updates.push(`status = $${paramIndex++}`);
         values.push(datos.status);
     }
 
     updates.push('updated_at = CURRENT_TIMESTAMP');
 
     if (updates.length > 1) {
-        const sql = `UPDATE projects SET ${updates.join(', ')} WHERE id = ?`;
+        const sql = `UPDATE projects SET ${updates.filter(u => !u.includes('updated_at')).join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = $${paramIndex}`;
         values.push(id);
         await ejecutar(sql, values);
     }
@@ -86,27 +87,27 @@ export const actualizarProyecto = async (id: string, datos: Partial<Project>) =>
 
 // Eliminar Proyecto
 export const eliminarProyecto = async (id: string) => {
-    const sql = `DELETE FROM projects WHERE id = ?`;
+    const sql = `DELETE FROM projects WHERE id = $1`;
     await ejecutar(sql, [id]);
 };
 
 // Agregar Miembro
 export const agregarMiembro = async (projectId: string, userId: string, roleId: number) => {
     // Verificar si ya existe
-    const checkSql = `SELECT * FROM project_members WHERE project_id = ? AND user_id = ?`;
+    const checkSql = `SELECT * FROM project_members WHERE project_id = $1 AND user_id = $2`;
     const existing = await obtener(checkSql, [projectId, userId]);
     if (existing) return;
 
     const sql = `
         INSERT INTO project_members (project_id, user_id, role_id)
-        VALUES (?, ?, ?)
+        VALUES ($1, $2, $3)
     `;
     await ejecutar(sql, [projectId, userId, roleId]);
 };
 
 // Eliminar Miembro
 export const eliminarMiembro = async (projectId: string, userId: string) => {
-    const sql = `DELETE FROM project_members WHERE project_id = ? AND user_id = ?`;
+    const sql = `DELETE FROM project_members WHERE project_id = $1 AND user_id = $2`;
     await ejecutar(sql, [projectId, userId]);
 };
 
@@ -117,7 +118,7 @@ export const obtenerMiembrosProyecto = async (projectId: string) => {
         FROM project_members pm
         JOIN users u ON pm.user_id = u.id
         JOIN roles r ON pm.role_id = r.id
-        WHERE pm.project_id = ?
+        WHERE pm.project_id = $1
     `;
     return await consulta(sql, [projectId]);
 };

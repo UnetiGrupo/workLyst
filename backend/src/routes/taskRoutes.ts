@@ -27,14 +27,14 @@ router.use(verificarToken);
  *         descripcion:
  *           type: string
  *         estado:
-          type: string
-          enum: [pendiente, en_progreso, completada, vencida]
-        fecha_limite:
-          type: string
-          format: date-time
-        creado_en:
-          type: string
-          format: date-time
+ *           type: string
+ *           enum: [pendiente, en_progreso, completada, vencida]
+ *         fecha_limite:
+ *           type: string
+ *           format: date-time
+ *         creado_en:
+ *           type: string
+ *           format: date-time
  */
 
 /**
@@ -44,7 +44,8 @@ router.use(verificarToken);
  *     summary: Obtener detalle de una tarea
  *     tags: [Tareas]
  *     security:
- *       - bearerAuth: []
+ *       - apiKeyAuth: []
+ *         bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -60,6 +61,8 @@ router.use(verificarToken);
  *               $ref: '#/components/schemas/Tarea'
  *       404:
  *         description: Tarea no encontrada
+ *       403:
+ *         description: Acceso denegado
  */
 router.get('/:id', obtenerDetalle);
 
@@ -70,7 +73,8 @@ router.get('/:id', obtenerDetalle);
  *     summary: Actualizar tarea
  *     tags: [Tareas]
  *     security:
- *       - bearerAuth: []
+ *       - apiKeyAuth: []
+ *         bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -89,16 +93,30 @@ router.get('/:id', obtenerDetalle);
  *               descripcion:
  *                 type: string
  *               estado:
-                type: string
-                enum: [pendiente, en_progreso, completada, vencida]
-              asignado_a:
-                type: string
-              fecha_limite:
-                type: string
-                format: date-time
+ *                 type: string
+ *                 enum: [pendiente, en_progreso, completada, vencida]
+ *               asignado_a:
+ *                 type: string
+ *                 format: uuid
+ *               fecha_limite:
+ *                 type: string
+ *                 format: date-time
  *     responses:
  *       200:
  *         description: Tarea actualizada
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 mensaje:
+ *                   type: string
+ *                 tarea:
+ *                   $ref: '#/components/schemas/Tarea'
+ *       404:
+ *         description: Tarea no encontrada
+ *       400:
+ *         description: Datos inválidos
  */
 router.put('/:id', actualizar);
 
@@ -109,7 +127,8 @@ router.put('/:id', actualizar);
  *     summary: Eliminar tarea
  *     tags: [Tareas]
  *     security:
- *       - bearerAuth: []
+ *       - apiKeyAuth: []
+ *         bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -119,6 +138,15 @@ router.put('/:id', actualizar);
  *     responses:
  *       200:
  *         description: Tarea eliminada
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 mensaje:
+ *                   type: string
+ *       404:
+ *         description: Tarea no encontrada
  */
 router.delete('/:id', eliminar);
 
@@ -130,7 +158,8 @@ router.delete('/:id', eliminar);
  *     summary: Asignar tarea a un usuario
  *     tags: [Tareas]
  *     security:
- *       - bearerAuth: []
+ *       - apiKeyAuth: []
+ *         bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -149,11 +178,23 @@ router.delete('/:id', eliminar);
  *               asignado_a:
  *                 type: string
  *                 description: ID del usuario a asignar
+ *                 format: uuid
  *     responses:
  *       200:
  *         description: Tarea asignada correctamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 mensaje:
+ *                   type: string
+ *                 tarea:
+ *                   $ref: '#/components/schemas/Tarea'
  *       400:
- *         description: Usuario no es miembro del proyecto
+ *         description: Usuario no es miembro del proyecto o falta asignado_a
+ *       404:
+ *         description: Tarea no encontrada
  */
 router.patch('/:id/assign', asignar);
 
