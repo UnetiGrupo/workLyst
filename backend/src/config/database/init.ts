@@ -143,6 +143,9 @@ export const inicializarTablas = async () => {
             )
         `);
 
+        // Asegurar que el token en token_blocklist sea único (necesario para ON CONFLICT)
+        await consulta(`CREATE UNIQUE INDEX IF NOT EXISTS token_blocklist_token_idx ON token_blocklist (token)`);
+
         // Crear usuario del sistema (IA Bot) si no existe
         const mensajeBot = await consulta(`SELECT * FROM users WHERE email = $1`, ['ia_bot@system.local']);
         if ((mensajeBot as any[]).length === 0) {
