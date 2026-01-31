@@ -13,6 +13,6 @@ export const obtenerTodosLosRoles = async (): Promise<Role[]> => {
 
 // Buscar rol por nombre
 export const buscarRolPorNombre = async (name: string): Promise<Role | undefined> => {
-    const sql = `SELECT * FROM roles WHERE name = ?`;
+    const sql = `SELECT * FROM roles WHERE name = $1`;
     return await obtener(sql, [name]) as any;
 };

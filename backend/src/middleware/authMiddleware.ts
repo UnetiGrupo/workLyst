@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import obtenerConfig from '../config/configLoader';
 import { buscarUsuarioPorEmail } from '../models/userModel';
+import { estaTokenBloqueado } from '../models/tokenModel';
 
 const config = obtenerConfig();
 
@@ -19,6 +20,16 @@ export const verificarToken = async (req: AuthRequest, res: Response, next: Next
     if (!token) {
         res.status(401).json({ mensaje: 'Token de acceso no proporcionado' });
         return;
+    }
+
+    // Verificar si el token está en la blocklist
+    try {
+        if (await estaTokenBloqueado(token)) {
+            res.status(401).json({ mensaje: 'Sesión cerrada o token revocado' });
+            return;
+        }
+    } catch (error) {
+        console.error('Error al verificar token en blocklist:', error);
     }
 
     // Verificar Token de Sistema

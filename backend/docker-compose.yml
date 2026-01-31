@@ -7,8 +7,8 @@ services:
       - "3000:3000"
     environment:
       - PORT=3000
-      - DB_TYPE=sqlite
-      - DB_FILENAME=data/worklyst.sqlite
+      - DB_TYPE=postgres
+      - DATABASE_URL=${DATABASE_URL}
       - JWT_ACCESS_SECRET=changeme_access
       - JWT_REFRESH_SECRET=changeme_refresh
     restart: always

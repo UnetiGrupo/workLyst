@@ -20,6 +20,20 @@ const router = Router();
  * @swagger
  * components:
  *   schemas:
+ *     Miembro:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: string
+ *         nombre:
+ *           type: string
+ *         email:
+ *           type: string
+ *         rol:
+ *           type: string
+ *         fechaUnion:
+ *           type: string
+ *           format: date-time
  *     Proyecto:
  *       type: object
  *       properties:
@@ -32,7 +46,7 @@ const router = Router();
  *           type: string
  *         creadorId:
  *           type: string
- *           description: Nombre del creador
+ *           description: Nombre del creador o ID
  *         estado:
  *           type: string
  *           enum: [active, finished]
@@ -42,6 +56,9 @@ const router = Router();
  *         actualizadoEn:
  *           type: string
  *           format: date-time
+ *         rol:
+ *           type: string
+ *           description: Rol del usuario en el proyecto (solo en listados de usuario)
  */
 
 /**
@@ -51,7 +68,8 @@ const router = Router();
  *     summary: Crear un nuevo proyecto
  *     tags: [Projects]
  *     security:
- *       - bearerAuth: []
+ *       - apiKeyAuth: []
+ *         bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -73,11 +91,25 @@ const router = Router();
  *     responses:
  *       201:
  *         description: Proyecto creado exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 mensaje:
+ *                   type: string
+ *                 proyecto:
+ *                   $ref: '#/components/schemas/Proyecto'
+ *       400:
+ *         description: Nombre de proyecto obligatorio
+ *       401:
+ *         description: No autorizado
  *   get:
  *     summary: Listar proyectos del usuario
  *     tags: [Projects]
  *     security:
- *       - bearerAuth: []
+ *       - apiKeyAuth: []
+ *         bearerAuth: []
  *     responses:
  *       200:
  *         description: Lista de proyectos
@@ -87,6 +119,8 @@ const router = Router();
  *               type: array
  *               items:
  *                 $ref: '#/components/schemas/Proyecto'
+ *       401:
+ *         description: No autorizado
  */
 router.post('/', verificarToken, crear);
 router.get('/', verificarToken, listar);
@@ -98,7 +132,8 @@ router.get('/', verificarToken, listar);
  *     summary: Obtener proyecto por ID
  *     tags: [Projects]
  *     security:
- *       - bearerAuth: []
+ *       - apiKeyAuth: []
+ *         bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -108,13 +143,27 @@ router.get('/', verificarToken, listar);
  *     responses:
  *       200:
  *         description: Detalles del proyecto con miembros
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/Proyecto'
+ *                 - type: object
+ *                   properties:
+ *                     miembros:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/Miembro'
  *       404:
  *         description: Proyecto no encontrado
+ *       403:
+ *         description: No tienes permiso para ver este proyecto
  *   put:
  *     summary: Actualizar proyecto
  *     tags: [Projects]
  *     security:
- *       - bearerAuth: []
+ *       - apiKeyAuth: []
+ *         bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -134,11 +183,23 @@ router.get('/', verificarToken, listar);
  *     responses:
  *       200:
  *         description: Proyecto actualizado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 mensaje:
+ *                   type: string
+ *       403:
+ *         description: Solo el creador puede editar
+ *       404:
+ *         description: Proyecto no encontrado
  *   delete:
  *     summary: Eliminar proyecto
  *     tags: [Projects]
  *     security:
- *       - bearerAuth: []
+ *       - apiKeyAuth: []
+ *         bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -148,6 +209,17 @@ router.get('/', verificarToken, listar);
  *     responses:
  *       200:
  *         description: Proyecto eliminado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 mensaje:
+ *                   type: string
+ *       403:
+ *         description: Solo el creador puede eliminar
+ *       404:
+ *         description: Proyecto no encontrado
  */
 router.get('/:id', verificarToken, obtenerUno);
 router.put('/:id', verificarToken, actualizar);
@@ -159,7 +231,8 @@ router.put('/:id', verificarToken, actualizar);
  *     summary: Finalizar proyecto
  *     tags: [Projects]
  *     security:
- *       - bearerAuth: []
+ *       - apiKeyAuth: []
+ *         bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -169,6 +242,17 @@ router.put('/:id', verificarToken, actualizar);
  *     responses:
  *       200:
  *         description: Proyecto finalizado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 mensaje:
+ *                   type: string
+ *       403:
+ *         description: Solo el creador puede finalizar
+ *       404:
+ *         description: Proyecto no encontrado
  */
 router.patch('/:id/finish', verificarToken, finalizar);
 router.delete('/:id', verificarToken, eliminar);
@@ -180,7 +264,8 @@ router.delete('/:id', verificarToken, eliminar);
  *     summary: Agregar miembro al proyecto
  *     tags: [Projects]
  *     security:
- *       - bearerAuth: []
+ *       - apiKeyAuth: []
+ *         bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -205,6 +290,21 @@ router.delete('/:id', verificarToken, eliminar);
  *     responses:
  *       200:
  *         description: Miembro agregado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 mensaje:
+ *                   type: string
+ *                 rolId:
+ *                   type: integer
+ *       400:
+ *         description: ID de usuario requerido o no se puede eliminar al creador
+ *       403:
+ *         description: Solo el creador puede agregar miembros
+ *       404:
+ *         description: Proyecto o usuario no encontrado
  */
 router.post('/:id/members', verificarToken, agregarMiembroController);
 
@@ -215,7 +315,8 @@ router.post('/:id/members', verificarToken, agregarMiembroController);
  *     summary: Eliminar miembro del proyecto
  *     tags: [Projects]
  *     security:
- *       - bearerAuth: []
+ *       - apiKeyAuth: []
+ *         bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -230,6 +331,17 @@ router.post('/:id/members', verificarToken, agregarMiembroController);
  *     responses:
  *       200:
  *         description: Miembro eliminado correctamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 mensaje:
+ *                   type: string
+ *       403:
+ *         description: Solo el creador puede eliminar miembros
+ *       404:
+ *         description: Proyecto no encontrado
  */
 router.delete('/:id/members/:userId', verificarToken, eliminarMiembroController);
 
@@ -241,7 +353,8 @@ router.delete('/:id/members/:userId', verificarToken, eliminarMiembroController)
  *     summary: Crear tarea en un proyecto
  *     tags: [Tareas]
  *     security:
- *       - bearerAuth: []
+ *       - apiKeyAuth: []
+ *         bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: projectId
@@ -270,11 +383,25 @@ router.delete('/:id/members/:userId', verificarToken, eliminarMiembroController)
  *     responses:
  *       201:
  *         description: Tarea creada
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 mensaje:
+ *                   type: string
+ *                 tarea:
+ *                   $ref: '#/components/schemas/Tarea'
+ *       400:
+ *         description: Título obligatorio o fecha inválida
+ *       403:
+ *         description: No tienes permiso para crear tareas
  *   get:
  *     summary: Listar tareas de un proyecto
  *     tags: [Tareas]
  *     security:
- *       - bearerAuth: []
+ *       - apiKeyAuth: []
+ *         bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: projectId
@@ -290,6 +417,8 @@ router.delete('/:id/members/:userId', verificarToken, eliminarMiembroController)
  *               type: array
  *               items:
  *                 $ref: '#/components/schemas/Tarea'
+ *       403:
+ *         description: No tienes permiso para ver tareas
  */
 router.post('/:projectId/tasks', verificarToken, crearTarea);
 router.get('/:projectId/tasks', verificarToken, listarTareas);

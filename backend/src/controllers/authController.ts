@@ -1,14 +1,13 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { crearUsuario, buscarUsuarioPorEmail, guardarRefreshToken, buscarRefreshToken, eliminarRefreshToken } from '../models/userModel';
+import { crearUsuario, buscarUsuarioPorEmail } from '../models/userModel';
+import { bloquearToken } from '../models/tokenModel';
 import obtenerConfig from '../config/configLoader';
 
 const config = obtenerConfig();
 const SECRET_ACCESS_TOKEN = config.jwt.accessTokenSecret;
-const SECRET_REFRESH_TOKEN = config.jwt.refreshTokenSecret;
 const EXPIRACION_ACCESS_TOKEN = config.jwt.accessTokenExpiry;
-const EXPIRACION_REFRESH_TOKEN = config.jwt.refreshTokenExpiry;
 
 // Función auxiliar para calcular fecha de expiración
 const obtenerFechaExpiracion = (expiracion: string): Date => {
@@ -68,77 +67,37 @@ export const iniciarSesion = async (req: Request, res: Response): Promise<void> 
         return;
     }
 
-    // Generar access token (corta duración)
+    // Generar session token (JWT)
     const tokenAcceso = jwt.sign(
         { id: usuario.id, email: usuario.email },
         SECRET_ACCESS_TOKEN,
         { expiresIn: EXPIRACION_ACCESS_TOKEN } as jwt.SignOptions
     );
 
-    // Generar refresh token (larga duración)
-    const tokenActualizacion = jwt.sign(
-        { id: usuario.id, email: usuario.email },
-        SECRET_REFRESH_TOKEN,
-        { expiresIn: EXPIRACION_REFRESH_TOKEN } as jwt.SignOptions
-    );
-
-    // Guardar refresh token en la base de datos
-    const expiraEn = obtenerFechaExpiracion(EXPIRACION_REFRESH_TOKEN);
-    await guardarRefreshToken(usuario.id, tokenActualizacion, expiraEn);
-
     res.json({
         mensaje: 'Login exitoso',
-        tokenAcceso,
-        tokenActualizacion,
+        sessionToken: tokenAcceso,
         usuario: { id: usuario.id, nombre: usuario.usuario, email: usuario.email }
     });
 };
 
-export const renovarToken = async (req: Request, res: Response): Promise<void> => {
-    const { tokenActualizacion } = req.body;
+export const cerrarSesion = async (req: Request, res: Response): Promise<void> => {
+    const { sessionToken } = req.body;
 
-    if (!tokenActualizacion) {
-        res.status(400).json({ mensaje: 'Refresh token es obligatorio' });
+    if (!sessionToken) {
+        res.status(400).json({ mensaje: 'Session token es obligatorio' });
         return;
     }
 
     try {
-        // Verificar refresh token
-        const decodificado = jwt.verify(tokenActualizacion, SECRET_REFRESH_TOKEN) as { id: string; email: string };
+        // Bloquear el token de sesión (access token)
+        const decoded: any = jwt.decode(sessionToken);
+        const exp = decoded?.exp ? new Date(decoded.exp * 1000) : new Date(Date.now() + 3600000);
+        await bloquearToken(sessionToken, exp);
 
-        // Verificar si el refresh token existe en la base de datos y no ha expirado
-        const tokenAlmacenado = await buscarRefreshToken(tokenActualizacion);
-        if (!tokenAlmacenado) {
-            res.status(401).json({ mensaje: 'Refresh token inválido o expirado' });
-            return;
-        }
-
-        // Generar nuevo access token
-        const nuevoTokenAcceso = jwt.sign(
-            { id: decodificado.id, email: decodificado.email },
-            SECRET_ACCESS_TOKEN,
-            { expiresIn: EXPIRACION_ACCESS_TOKEN } as jwt.SignOptions
-        );
-
-        res.json({
-            mensaje: 'Token renovado exitosamente',
-            tokenAcceso: nuevoTokenAcceso
-        });
+        res.json({ mensaje: 'Logout exitoso' });
     } catch (error) {
-        res.status(401).json({ mensaje: 'Refresh token inválido' });
+        console.error('Error en cerrarSesion:', error);
+        res.status(500).json({ mensaje: 'Error al cerrar sesión' });
     }
-};
-
-export const cerrarSesion = async (req: Request, res: Response): Promise<void> => {
-    const { tokenActualizacion } = req.body;
-
-    if (!tokenActualizacion) {
-        res.status(400).json({ mensaje: 'Refresh token es obligatorio' });
-        return;
-    }
-
-    // Eliminar refresh token de la base de datos
-    await eliminarRefreshToken(tokenActualizacion);
-
-    res.json({ mensaje: 'Logout exitoso' });
 };
