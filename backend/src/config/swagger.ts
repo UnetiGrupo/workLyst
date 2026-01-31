@@ -37,12 +37,18 @@ const swaggerDefinition = {
                 scheme: 'bearer',
                 bearerFormat: 'JWT',
             },
+            apiKeyAuth: {
+                type: 'apiKey',
+                in: 'header',
+                name: 'x-api-key',
+                description: 'API Key para validar la aplicación cliente'
+            },
         },
     },
     security: [
         {
-            bearerAuth: [],
-        },
+            apiKeyAuth: []
+        }
     ],
 };
 

@@ -32,6 +32,10 @@ inicializarTablas().catch(console.error);
 // Documentación Swagger
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
+// Middleware de API Key Global
+import { verificarApiKey } from './middleware/apiKeyMiddleware';
+app.use('/api', verificarApiKey);
+
 // Rutas API
 app.use('/api/auth', rutasAuth);
 app.use('/api/projects', rutasProyectos);

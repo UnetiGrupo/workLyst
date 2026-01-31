@@ -25,7 +25,7 @@ export interface GroupMember {
 
 // Helper para obtener ID de estatus
 const obtenerIdEstatus = async (nombre: string): Promise<number | undefined> => {
-    const sql = `SELECT id FROM group_statuses WHERE name = ?`;
+    const sql = `SELECT id FROM group_statuses WHERE name = $1`;
     const res = await obtener(sql, [nombre]) as any;
     return res ? res.id : undefined;
 };
@@ -38,7 +38,7 @@ export const crearGrupo = async (grupo: { name: string; description?: string; ow
 
     const sql = `
         INSERT INTO groups (id, name, description, owner_id, status_id)
-        VALUES (?, ?, ?, ?, ?)
+        VALUES ($1, $2, $3, $4, $5)
     `;
     await ejecutar(sql, [id, grupo.name, grupo.description, grupo.owner_id, statusId]);
 
@@ -81,7 +81,7 @@ export const obtenerGrupoPorId = async (id: string): Promise<Group | undefined> 
         FROM groups g
         JOIN users u ON g.owner_id = u.id
         JOIN group_statuses s ON g.status_id = s.id
-        WHERE g.id = ? AND s.name = 'activo'
+        WHERE g.id = $1 AND s.name = 'activo'
     `;
     return await obtener(sql, [id]) as any;
 };
@@ -92,42 +92,45 @@ export const obtenerGruposUsuario = async (userId: string): Promise<any[]> => {
     const sql = `
         SELECT g.*, u.name as owner_name, s.name as status_name
         FROM groups g
-        JOIN group_members gm ON g.id = gm.project_id
-        JOIN users u ON g.owner_id = u.id
-        JOIN group_statuses s ON g.status_id = s.id
-        WHERE gm.user_id = ? AND s.name = 'activo'
-        ORDER BY g.updated_at DESC
-    `;
-    // CORRECCION: en group_members la columna es group_id no project_id, copié mal query mental
-    const sqlCorrecto = `
-        SELECT g.*, u.name as owner_name, s.name as status_name
-        FROM groups g
         JOIN group_members gm ON g.id = gm.group_id
         JOIN users u ON g.owner_id = u.id
         JOIN group_statuses s ON g.status_id = s.id
-        WHERE gm.user_id = ? AND s.name = 'activo'
+        WHERE gm.user_id = $1 AND s.name = 'activo'
         ORDER BY g.updated_at DESC
     `;
-    return await consulta(sqlCorrecto, [userId]);
+    return await consulta(sql, [userId]);
+};
+
+// Obtener todos los grupos activos
+export const obtenerTodosLosGrupos = async (): Promise<any[]> => {
+    const sql = `
+        SELECT g.*, u.name as owner_name, s.name as status_name
+        FROM groups g
+        JOIN users u ON g.owner_id = u.id
+        JOIN group_statuses s ON g.status_id = s.id
+        WHERE s.name = 'activo'
+        ORDER BY g.updated_at DESC
+    `;
+    return await consulta(sql, []);
 };
 
 export const actualizarGrupo = async (id: string, datos: { name?: string; description?: string }) => {
     const updates: string[] = [];
     const values: any[] = [];
+    let paramIndex = 1;
 
     if (datos.name) {
-        updates.push('name = ?');
+        updates.push(`name = $${paramIndex++}`);
         values.push(datos.name);
     }
     if (datos.description !== undefined) {
-        updates.push('description = ?');
+        updates.push(`description = $${paramIndex++}`);
         values.push(datos.description);
     }
 
-    updates.push('updated_at = CURRENT_TIMESTAMP');
-
-    if (updates.length > 1) {
-        const sql = `UPDATE groups SET ${updates.join(', ')} WHERE id = ?`;
+    // Only proceed if there are actual fields to update (excluding updated_at)
+    if (updates.length > 0) {
+        const sql = `UPDATE groups SET ${updates.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = $${paramIndex}`;
         values.push(id);
         await ejecutar(sql, values);
     }
@@ -137,23 +140,23 @@ export const eliminarGrupoLogico = async (id: string) => {
     const statusId = await obtenerIdEstatus('eliminado');
     if (!statusId) throw new Error('Estatus eliminado no configurado');
 
-    const sql = `UPDATE groups SET status_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`;
+    const sql = `UPDATE groups SET status_id = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2`;
     await ejecutar(sql, [statusId, id]);
 };
 
 // Miembros
 export const agregarMiembro = async (groupId: string, userId: string) => {
     // Verificar existencia
-    const checkSql = `SELECT * FROM group_members WHERE group_id = ? AND user_id = ?`;
+    const checkSql = `SELECT * FROM group_members WHERE group_id = $1 AND user_id = $2`;
     const existing = await obtener(checkSql, [groupId, userId]);
     if (existing) return;
 
-    const sql = `INSERT INTO group_members (group_id, user_id) VALUES (?, ?)`;
+    const sql = `INSERT INTO group_members (group_id, user_id) VALUES ($1, $2)`;
     await ejecutar(sql, [groupId, userId]);
 };
 
 export const eliminarMiembro = async (groupId: string, userId: string) => {
-    const sql = `DELETE FROM group_members WHERE group_id = ? AND user_id = ?`;
+    const sql = `DELETE FROM group_members WHERE group_id = $1 AND user_id = $2`;
     await ejecutar(sql, [groupId, userId]);
 };
 
@@ -162,7 +165,7 @@ export const obtenerMiembrosGrupo = async (groupId: string) => {
         SELECT u.id, u.name, u.email, gm.joined_at
         FROM group_members gm
         JOIN users u ON gm.user_id = u.id
-        WHERE gm.group_id = ?
+        WHERE gm.group_id = $1
     `;
     return await consulta(sql, [groupId]);
 };

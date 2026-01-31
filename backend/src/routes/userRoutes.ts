@@ -33,7 +33,8 @@ router.use(verificarToken);
  *     summary: Obtener lista de usuarios o buscar usuarios
  *     tags: [Usuarios]
  *     security:
- *       - bearerAuth: []
+ *       - apiKeyAuth: []
+ *         bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: nombre
@@ -64,7 +65,8 @@ router.get('/', obtenerUsuarios);
  *     summary: Obtener detalle de un usuario
  *     tags: [Usuarios]
  *     security:
- *       - bearerAuth: []
+ *       - apiKeyAuth: []
+ *         bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -90,7 +92,8 @@ router.get('/:id', obtenerUsuario);
  *     summary: Actualizar información de usuario
  *     tags: [Usuarios]
  *     security:
- *       - bearerAuth: []
+ *       - apiKeyAuth: []
+ *         bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -110,9 +113,22 @@ router.get('/:id', obtenerUsuario);
  *                 type: string
  *     responses:
  *       200:
- *         description: Usuario actualizado
+ *         description: Usuario actualizado exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 mensaje:
+ *                   type: string
+ *                 usuario:
+ *                   $ref: '#/components/schemas/Usuario'
+ *       400:
+ *         description: No hay datos para actualizar
  *       403:
- *         description: No autorizado (solo el dueño puede editar)
+ *         description: No tienes permiso para actualizar este usuario (solo el dueño puede editar)
+ *       404:
+ *         description: Usuario no encontrado
  */
 router.put('/:id', actualizarUsuarioControlador);
 
