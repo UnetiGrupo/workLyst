@@ -9,6 +9,7 @@ import { useTasks } from "@/contexts/TasksContext";
 import { Plus, Loader2 } from "lucide-react";
 import { TaskBoard } from "./TaskBoard";
 import { AddTaskModal } from "./AddTaskModal";
+import { Button } from "@/components/common/Button";
 
 interface TasksContainerProps {
   projectId: string;
@@ -54,21 +55,19 @@ export function TasksContainer({ projectId }: TasksContainerProps) {
   }
 
   return (
-    <div className="flex flex-col gap-8 max-w-10/12 mx-auto mt-12 min-h-screen relative">
+    <div className="flex flex-col gap-8 max-w-11/12 2xl:max-w-10/12 mx-auto mt-12 min-h-screen relative">
       <header className="flex items-center justify-between">
         <div className="flex flex-col gap-2">
-          <h1 className="text-3xl font-bold">{selectedProject.nombre}</h1>
-          <p className="text-lg text-gray-600 max-w-xl">
+          <h1 className="text-2xl 2xl:text-3xl font-bold">
+            {selectedProject.nombre}
+          </h1>
+          <p className="text-base 2xl:text-lg text-gray-600 max-w-xl">
             {selectedProject.descripcion}
           </p>
         </div>
-        <button
-          className="flex items-center gap-2 px-6 py-3 bg-blue-500 text-white rounded-lg shadow-lg 
-          shadow-blue-500/30 hover:bg-blue-600 hover:shadow-blue-500/50 hover:-translate-y-1 transition-all font-medium"
-          onClick={() => setShowTaskModal(true)}
-        >
+        <Button onClick={() => setShowTaskModal(true)}>
           <Plus /> Nueva tarea
-        </button>
+        </Button>
       </header>
 
       {/* CARGANDO TAREAS */}

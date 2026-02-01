@@ -61,7 +61,7 @@ export function ChatbotAgent() {
   };
 
   return (
-    <div className="fixed bottom-8 right-8 z-50">
+    <div className="fixed bottom-4 2xl:bottom-8 right-8 z-50">
       <button
         className={`relative rounded-full p-3.5 hover:scale-105 transition-all duration-300 cursor-pointer group ${
           isChatOpen
@@ -70,16 +70,16 @@ export function ChatbotAgent() {
         } shadow-lg shadow-blue-500/20`}
         onClick={handleChatOpen}
       >
-        <div className="relative size-8">
+        <div className="relative size-6 2xl:size-8">
           <CircleX
-            className={`absolute inset-0 size-8 text-white transition-all duration-400 transform ${
+            className={`absolute inset-0 size-6 2xl:size-8 text-white transition-all duration-400 transform ${
               isChatOpen
                 ? "scale-100 opacity-100 rotate-0"
                 : "scale-0 opacity-0 -rotate-90"
             }`}
           />
           <MessageCircleMore
-            className={`absolute inset-0 size-8 text-white transition-all duration-400 transform ${
+            className={`absolute inset-0 size-6 2xl:size-8 text-white transition-all duration-400 transform ${
               isChatOpen
                 ? "scale-0 opacity-0 rotate-90"
                 : "scale-100 opacity-100 rotate-0"
@@ -89,19 +89,19 @@ export function ChatbotAgent() {
       </button>
 
       {isChatOpen && (
-        <article className="flex flex-col gap-4 border border-gray-200 absolute bottom-20 right-0 w-[400px] h-[600px] bg-white rounded-xl shadow-2xl transition-all duration-300">
+        <article className="flex flex-col gap-4 border border-gray-200 absolute bottom-16 2xl:bottom-20 right-0 w-[400px] h-[450px] 2xl:h-[600px] bg-white rounded-xl shadow-2xl transition-all duration-300">
           <header className="border-b border-gray-200 pb-4">
             <div className="flex items-center justify-between px-4 pt-4">
               <div className="flex items-center gap-2">
-                <span className="flex items-center justify-center text-lg font-medium text-white bg-blue-400 rounded-lg size-10 shadow-md">
+                <span className="flex items-center justify-center text-sm 2xl:text-lg font-medium text-white bg-blue-400 rounded-lg size-8 2xl:size-10 shadow-md">
                   WL
                 </span>
-                <h3 className="font-medium text-gray-700">
+                <h3 className="text-sm 2xl:text-lg font-medium text-gray-700">
                   Asistente Worklyst
                 </h3>
               </div>
               <button onClick={handleChatOpen}>
-                <Minimize2 className="text-gray-400 hover:text-gray-800 hover:scale-110 transition-all duration-300 cursor-pointer" />
+                <Minimize2 className="size-5 2xl:size-6 text-gray-400 hover:text-gray-800 hover:scale-110 transition-all duration-300 cursor-pointer" />
               </button>
             </div>
           </header>

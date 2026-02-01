@@ -4,16 +4,15 @@ import Link from "next/link";
 export function Footer() {
   return (
     <footer
-      className="bg-white pt-16 pb-8 px-6 md:px-20 lg:px-32 border-t border-slate-100"
+      className="py-16 max-w-11/12 2xl:max-w-10/12 mx-auto"
       aria-label="Pie de página"
     >
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between gap-12">
-        <div className="max-w-xs">
-          <img
-            src="/worklyst-logo.svg"
-            alt="Worklyst Logo"
-            className="h-8 mb-4"
-          />
+      <div className="flex flex-col md:flex-row justify-between gap-12">
+        <div className="flex flex-col gap-2 max-w-xs">
+          <picture className="flex items-center gap-2">
+            <img src="/logo.svg" alt="Worklyst Logo" className="h-8" />
+            <h3 className="font-semibold">Worklyst</h3>
+          </picture>
           <p className="text-slate-500 text-sm leading-relaxed mb-6">
             Potencia la Colaboración de tu equipo con IA. Organiza, asigna y
             completa proyectos de manera más eficiente que nunca.

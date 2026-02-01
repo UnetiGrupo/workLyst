@@ -13,6 +13,7 @@ import { Plus, Search, X, UserPlus, Pencil, Loader2 } from "lucide-react";
 // Components
 import { ProjectInput } from "./ProjectInput";
 import { MemberAvatar } from "@/components/common/MemberAvatar";
+import { Button } from "@/components/common/Button";
 // Constants
 import { PROJECT_FORM } from "@/lib/constants";
 
@@ -109,16 +110,16 @@ export function CreateProjectModal({
     >
       <article
         ref={contentRef}
-        className="relative flex flex-col gap-6 max-w-md w-full bg-white rounded-2xl p-8 shadow-2xl"
+        className="relative flex flex-col gap-6 max-w-md w-full bg-white rounded-2xl p-4 2xl:p-8 shadow-2xl"
       >
         <header className="flex items-center justify-between">
           <div>
-            <h3 className="text-2xl font-bold text-gray-900">
+            <h3 className="text-xl 2xl:text-2xl font-bold text-gray-900">
               {initialData ? "Editar Proyecto" : "Nuevo Proyecto"}
             </h3>
           </div>
           <button onClick={() => setShowModal(false)}>
-            <X className="size-6 text-gray-400 hover:text-red-500 transition-colors" />
+            <X className="size-5 2xl:size-6 text-gray-400 hover:text-red-500 transition-colors" />
           </button>
         </header>
 
@@ -217,21 +218,14 @@ export function CreateProjectModal({
         </form>
 
         <footer className="flex items-center justify-end gap-3 mt-4">
-          <button
-            type="button"
+          <Button
             onClick={() => setShowModal(false)}
-            className="px-5 py-2 rounded-xl bg-gray-100 text-gray-600 font-medium"
+            style="secondary"
+            type="button"
           >
             Cancelar
-          </button>
-          <button
-            type="submit"
-            form="project-form"
-            disabled={loadingAction}
-            className={`flex items-center gap-2 px-6 py-2 rounded-xl bg-blue-500 text-white font-medium shadow-lg shadow-blue-500/25 transition-all ${
-              loadingAction ? "opacity-70 cursor-not-allowed" : ""
-            }`}
-          >
+          </Button>
+          <Button type="submit" form="project-form" disabled={loadingAction}>
             {loadingAction ? (
               <Loader2 className="size-4 animate-spin" />
             ) : initialData ? (
@@ -240,7 +234,7 @@ export function CreateProjectModal({
               <Plus className="size-4" />
             )}
             {initialData ? "Guardar" : "Crear"}
-          </button>
+          </Button>
         </footer>
       </article>
     </div>

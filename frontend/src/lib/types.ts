@@ -1,8 +1,9 @@
-import { ComponentType } from "react";
+import { ComponentType, ElementType } from "react";
 
 export interface NavbarItem {
   label: string;
   href: string;
+  icon?: ElementType;
 }
 
 export interface Feature {
@@ -48,9 +49,9 @@ export interface Project {
   actualizadoEn?: string;
   miembros?: {
     id: string;
-    nombre: string;
-    email: string;
-    rol: string;
+    nombre?: string;
+    email?: string;
+    rol?: string;
   }[];
   creadorId?: string;
 }

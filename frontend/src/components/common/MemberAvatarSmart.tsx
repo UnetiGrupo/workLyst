@@ -8,12 +8,14 @@ import { User } from "@/lib/types";
 interface MemberAvatarSmartProps {
   userId: string;
   size?: "sm" | "md" | "lg" | "xl";
+  rounded?: "full" | "lg";
   className?: string;
 }
 
 export function MemberAvatarSmart({
   userId,
   size,
+  rounded = "full",
   className,
 }: MemberAvatarSmartProps) {
   const { fetchUserById } = useUsers();
@@ -33,6 +35,7 @@ export function MemberAvatarSmart({
 
   return (
     <MemberAvatar
+      rounded={rounded}
       name={displayName}
       size={size}
       className={className}

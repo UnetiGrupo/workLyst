@@ -6,7 +6,6 @@ import { ProjectStateCard } from "@/components/projects/ProjectStateCard";
 // Hooks
 import { useEffect, useMemo, useState } from "react";
 // Contexts
-import { useUsers } from "@/contexts/UsersContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProjects } from "@/contexts/ProjectsContext";
 //Constants
@@ -15,6 +14,7 @@ import { PROJECT_STATES } from "@/lib/constants";
 import { Plus, Loader2 } from "lucide-react";
 import { ProjectCard } from "@/components/projects/ProjectCard";
 import { CreateProjectModal } from "@/components/projects/CreateProjectModal";
+import { Button } from "@/components/common/Button";
 
 export default function ProjectsPage() {
   const [showModal, setShowModal] = useState(false);
@@ -41,22 +41,24 @@ export default function ProjectsPage() {
   };
 
   return (
-    <main className="min-h-screen flex flex-col gap-8 mt-12 max-w-11/12 xl:max-w-10/12 2xl:max-w-8/12 mx-auto relative">
+    <main className="min-h-screen flex flex-col gap-4 2xl:gap-8 mt-8 2xl:mt-12 max-w-11/12 2xl:max-w-10/12 mx-auto relative">
       <header className="flex flex-col gap-4">
-        <h2 className="text-xl text-blue-500 font-semibold">
+        <h2 className="text-lg 2xl:text-xl text-blue-500 font-semibold">
           👋 ¡Bienvenido, {mounted && welcomeMessage}!
         </h2>
         <div className="flex items-center justify-between">
-          <h1 className="text-4xl font-semibold tracking-wide">
-            Mis Proyectos
-          </h1>
-          <button
-            onClick={handleShowModal}
-            className="flex items-center gap-2 px-6 py-3 rounded-lg bg-blue-500 text-white font-medium shadow-lg shadow-blue-500/30 hover:bg-blue-600 hover:shadow-blue-500/50 hover:-translate-y-1 transition-all duration-200 cursor-pointer"
-          >
+          <div className="flex flex-col gap-2">
+            <h1 className="text-3xl 2xl:text-4xl font-semibold tracking-wide">
+              Mis Proyectos
+            </h1>
+            <p className="text-sm 2xl:text-base text-gray-500">
+              Administra tus proyectos grupales aquí
+            </p>
+          </div>
+          <Button onClick={handleShowModal}>
             <Plus />
             Nuevo Proyecto
-          </button>
+          </Button>
         </div>
       </header>
 
@@ -69,7 +71,7 @@ export default function ProjectsPage() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mt-2 2xl:mt-0">
             {PROJECT_STATES.map((state) => {
               // Calcular valor dinamicamente
               const value =
@@ -82,7 +84,7 @@ export default function ProjectsPage() {
               );
             })}
           </div>
-          <ul className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 min-h-72">
+          <ul className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 min-h-48 2xl:min-h-72 mt-4 2xl:mt-0">
             {projects.map((project, index) => (
               <li
                 key={project?.id || `project-${index}`}

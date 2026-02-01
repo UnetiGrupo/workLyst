@@ -12,6 +12,7 @@ import { ArrowRight } from "lucide-react";
 import { FEATURES } from "@/lib/constants";
 // Animaciones
 import { animations } from "@/lib/animations";
+import { Button } from "@/components/common/Button";
 
 export default function Home() {
   const container = useRef<HTMLElement>(null);
@@ -41,38 +42,35 @@ export default function Home() {
   });
 
   return (
-    <main ref={container}>
+    <main className="max-w-11/12 2xl:max-w-10/12 mx-auto" ref={container}>
       {/* Hero Section */}
       <section
-        className="py-16 px-6 md:px-20 lg:px-32 flex flex-col md:flex-row items-center justify-between gap-10"
+        className="flex flex-col md:flex-row items-center justify-between gap-4 py-8"
         aria-label="Introducción a Worklyst"
       >
-        <div className="container flex-1 max-w-2xl">
-          <span className="inline-flex items-center gap-2 bg-blue-100 text-blue-600 px-4 py-1.5 rounded-full text-sm font-semibold mb-6">
+        <div className="flex flex-col gap-2 2xl:gap-4 flex-1 max-w-2xl">
+          <span className="w-fit inline-flex items-center gap-2 bg-blue-100 text-blue-600 px-2 2xl:px-4 py-1 2xl:py-1.5 rounded-full text-xs 2xl:text-sm font-semibold">
             Potenciado por IA
           </span>
           <h1
-            className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-slate-900 
-            leading-tight mb-6 hero-text"
+            className="text-4xl md:text-5xl 2xl:text-6xl font-extrabold text-slate-900 
+            leading-tight hero-text"
           >
             Gestión de tareas{" "}
             <span className="text-blue-400">Inteligentes</span> para equipos
           </h1>
-          <p className="text-slate-500 text-lg md:text-xl mb-8 leading-relaxed max-w-lg hero-text">
+          <p className="text-slate-500 text-base 2xl:text-xl leading-relaxed max-w-lg hero-text">
             Potencia la colaboración de tu equipo con IA. Organiza, asigna y
             completa proyectos de manera más eficiente que nunca.
           </p>
           <div className="flex flex-wrap gap-4 hero-text">
-            <Link
-              href="/register"
-              className="bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 rounded-lg font-medium transition-all flex items-center gap-2 shadow-lg shadow-blue-200"
-              aria-label="Comenzar gratis con Worklyst"
-            >
+            <Button href="/register">
               Comenzar Gratis
-            </Link>
+              <ArrowRight className="size-5" />
+            </Button>
           </div>
         </div>
-        <div className="flex-1 w-full max-w-xl">
+        <div className="flex-1 w-full max-w-md 2xl:max-w-xl">
           <div className="relative image">
             <img
               src="/images/IA-en-clase.webp"
@@ -86,17 +84,17 @@ export default function Home() {
 
       {/* Features Section */}
       <section
-        className="py-20 px-6 md:px-20 lg:px-32 bg-white"
+        className="flex flex-col gap-4 2xl:gap-6"
         aria-labelledby="features-title"
       >
-        <div className="text-center md-16">
+        <div className="flex flex-col gap-2 text-center">
           <h2
             id="features-title"
-            className="text-3xl md:text-4xl font-bold text-slate-900 mb-4 m-1"
+            className="text-3xl 2xl:text-4xl font-bold text-slate-900"
           >
             Todo lo que necesitas para ser productivo.
           </h2>
-          <p className="text-slate-500 text-lg m-3">
+          <p className="text-slate-500 text-base 2xl:text-lg">
             Herramientas inteligentes que se adaptan a tu forma de trabajo.
           </p>
         </div>
@@ -118,23 +116,18 @@ export default function Home() {
             className="md:col-span-1 lg:col-span-3 bg-white
             p-8 rounded-2xl flex flex-col justify-center items-start cta-container"
           >
-            <h3 className="text-2xl font-bold text-slate-900 mb-2 cta">
+            <h3 className="text-2xl font-bold mb-2 cta">
               ¿Listo para transformar tu productividad?
             </h3>
-            <p className="text-slate-500 mb-6 cta">
+            <p className="text-gray-500 mb-6 cta">
               Únete a miles de equipos que ya estan trabajando de manera más
               inteligente.
             </p>
             <div aria-hidden="true" className="cta">
-              <Link
-                href="/register"
-                className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg
-              font-medium transition-all flex items-center gap-2"
-                aria-label="Comenzar ahora registrándote"
-              >
+              <Button href="/register">
                 Comenzar ahora
                 <ArrowRight className="size-5" />
-              </Link>
+              </Button>
             </div>
           </article>
         </div>

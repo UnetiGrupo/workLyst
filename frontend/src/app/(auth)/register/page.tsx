@@ -13,6 +13,7 @@ import { useState, useRef } from "react";
 // Animaciones
 import { animations } from "@/lib/animations";
 import { useAnimations } from "@/hooks/useAnimations";
+import { Button } from "@/components/common/Button";
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -39,12 +40,16 @@ export default function RegisterPage() {
   return (
     <main
       ref={containerRef}
-      className="flex flex-col items-center justify-center h-screen"
+      className="flex flex-col items-center justify-center h-screen overflow-hidden"
     >
-      <div className="flex flex-col gap-4 bg-white p-6 rounded-2xl shadow-lg max-w-md w-full register">
+      <div className="flex flex-col gap-2 2xl:gap-4 bg-white p-6 rounded-2xl border border-gray-200 shadow-lg max-w-md w-full register">
         <header className="flex flex-col items-center gap-2">
-          <img className="w-20" src="/worklyst.svg" alt="Logo de Worklyst" />
-          <h1 className="text-3xl font-extrabold tracking-wide">Worklyst</h1>
+          <img
+            className="w-12 2xl:w-16"
+            src="/logo.svg"
+            alt="Logo de Worklyst"
+          />
+          <h1 className="text-xl 2xl:text-3xl font-semibold">Worklyst</h1>
         </header>
 
         <section
@@ -66,16 +71,16 @@ export default function RegisterPage() {
               />
             ))}
 
-            <button
+            <Button
+              className="hover:scale-105 active:scale-100"
               type="submit"
-              className="py-2.5 bg-blue-400 text-white rounded-lg text-lg hover:bg-blue-500 hover:scale-105 active:scale-90 transition-all cursor-pointer mt-2"
               disabled={states.loading}
             >
               {states.loading ? "Cargando..." : "Registrarse"}
-            </button>
+            </Button>
           </form>
 
-          <span className="text-center mt-2 text-gray-600">
+          <span className="text-sm 2xl:text-base text-center mt-2 text-gray-600">
             ¿Ya tienes una cuenta?{" "}
             <Link href="/login" className="text-blue-500 hover:underline">
               Inicia Sesión Aquí

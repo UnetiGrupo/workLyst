@@ -124,7 +124,7 @@ export function TaskCard(task: Task) {
           <div className="flex items-center gap-2">
             <h4 className="text-xs text-gray-600">Asignado a:</h4>
             {asignado_a ? (
-              <MemberAvatarSmart userId={asignado_a} />
+              <MemberAvatarSmart userId={asignado_a} size="sm" rounded="lg" />
             ) : (
               <span className="text-xs text-gray-400">Sin asignar</span>
             )}

@@ -23,10 +23,10 @@ export function ProjectInput({
 
   return (
     <label className="flex flex-col gap-2">
-      <span className="font-medium">{label}</span>
+      <span className="text-sm 2xl:text-base font-medium">{label}</span>
       {isDescription ? (
         <textarea
-          className={`${commonClasses} h-32 resize-none`}
+          className={`${commonClasses} h-24 2xl:h-32 resize-none text-sm 2xl:text-base`}
           name={name}
           id={name}
           placeholder={placeholder}
@@ -38,7 +38,7 @@ export function ProjectInput({
             <Icon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           )}
           <input
-            className={`${commonClasses} ${Icon ? "pl-10" : ""}`}
+            className={`${commonClasses} ${Icon ? "pl-10" : ""} text-sm 2xl:text-base`}
             type="text"
             name={name}
             id={name}

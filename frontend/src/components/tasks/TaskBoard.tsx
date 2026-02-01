@@ -38,7 +38,7 @@ export function TaskBoard({ openModal, tasks }: TaskBoardProps) {
   ];
 
   return (
-    <article className="grid grid-cols-3 gap-16 w-full  rounded-lg py-4 h-[calc(100vh-18rem)]">
+    <article className="grid grid-cols-3 gap-6 2xl:gap-16 w-full  rounded-lg py-4 h-[calc(100vh-18rem)]">
       {columns.map((column) => {
         const columnTasks = tasks.filter((task) => task.estado === column.id);
         return (

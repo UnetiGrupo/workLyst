@@ -85,7 +85,7 @@ export function MemberAvatar({
   return (
     <div
       title={name || ""}
-      className={`${sizes[size].size} flex items-center justify-center ${roundedClass} border-2 border-white bg-linear-to-br ${bgGradient} shadow-sm hover:scale-110 hover:z-20 transition-all duration-300 cursor-pointershrink-0 ring-1 ring-gray-100/50 ${className}`}
+      className={`${sizes[size].size} flex items-center justify-center ${roundedClass} bg-linear-to-br ${bgGradient} shadow-sm hover:scale-110 hover:z-20 transition-all duration-300 cursor-pointer ${className}`}
     >
       <span
         className={`${sizes[size as AvatarSize].fontSize} text-white font-black tracking-tighter`}

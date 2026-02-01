@@ -13,6 +13,7 @@ import { UsersProvider } from "@/contexts/UsersContext";
 import { TasksProvider } from "@/contexts/TasksContext";
 // Components
 import { ChatbotAgent } from "@/components/chatbot/ChatbotAgent";
+import { Sidebar } from "./Sidebar";
 
 export default function RouterLayout({
   children,
@@ -21,7 +22,10 @@ export default function RouterLayout({
 }) {
   const pathname = usePathname();
 
-  const showLayout = pathname !== "/login" && pathname !== "/register";
+  const showHeader = pathname === "/";
+  const showSidebar =
+    pathname !== "/" && pathname !== "/login" && pathname !== "/register";
+  const showFooter = pathname !== "/login" && pathname !== "/register";
 
   return (
     <ToastProvider>
@@ -30,10 +34,19 @@ export default function RouterLayout({
           <ProjectsProvider>
             <TasksProvider>
               <div className="min-h-screen flex flex-col">
-                {showLayout && <Header />}
-                <div className="flex-1">{children}</div>
+                {showHeader && <Header />}
+                {showSidebar && <Sidebar />}
+                <div
+                  className={`flex-1 ${showSidebar ? "ml-64 2xl:ml-72" : ""}`}
+                >
+                  {children}
+                </div>
                 <ChatbotAgent />
-                {showLayout && <Footer />}
+                {showFooter && (
+                  <div className={`${showSidebar ? "ml-64 2xl:ml-72" : ""}`}>
+                    <Footer />
+                  </div>
+                )}
               </div>
             </TasksProvider>
           </ProjectsProvider>

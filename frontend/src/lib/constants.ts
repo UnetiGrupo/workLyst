@@ -5,26 +5,34 @@ import {
   Bot,
   ChartNoAxesColumn,
   FileChartColumn,
+  Folder,
   Handshake,
+  Home,
+  LayoutDashboard,
   Timer,
+  Users,
 } from "lucide-react";
 
 export const NAVBAR_ITEMS: NavbarItem[] = [
   {
     label: "Inicio",
     href: "/",
+    icon: Home,
   },
   {
     label: "Proyectos",
     href: "/projects",
+    icon: Folder,
   },
   {
     label: "Comunidad",
     href: "/community",
+    icon: Users,
   },
   {
     label: "Dashboard",
     href: "/dashboard",
+    icon: LayoutDashboard,
   },
 ];
 

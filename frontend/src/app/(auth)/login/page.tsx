@@ -15,6 +15,7 @@ import { useAnimations } from "@/hooks/useAnimations";
 import { useAuth } from "@/contexts/AuthContext";
 // Tipos
 import { User } from "@/lib/types";
+import { Button } from "@/components/common/Button";
 
 export default function LoginPage() {
   const [formData, setFormData] = useState<User>({
@@ -41,12 +42,16 @@ export default function LoginPage() {
   return (
     <main
       ref={containerRef}
-      className="flex flex-col items-center justify-center h-screen"
+      className="flex flex-col items-center justify-center h-screen overflow-hidden"
     >
-      <div className="flex flex-col gap-4 bg-white p-6 rounded-2xl shadow-lg max-w-md w-full login">
+      <div className="flex flex-col gap-2 2xl:gap-4 bg-white p-6 rounded-2xl border border-gray-200 shadow-lg max-w-md w-full login">
         <header className="flex flex-col items-center gap-2">
-          <img className="w-20" src="/worklyst.svg" alt="Logo de Worklyst" />
-          <h1 className="text-3xl font-extrabold tracking-wide">Worklyst</h1>
+          <img
+            className="w-12 2xl:w-16"
+            src="/logo.svg"
+            alt="Logo de Worklyst"
+          />
+          <h1 className="text-xl 2xl:text-3xl font-semibold">Worklyst</h1>
         </header>
 
         <section
@@ -68,16 +73,16 @@ export default function LoginPage() {
               />
             ))}
 
-            <button
+            <Button
               type="submit"
-              className="py-2.5 bg-blue-400 text-white rounded-lg text-lg hover:bg-blue-500 hover:scale-105 active:scale-90 transition-all cursor-pointer mt-2"
+              className="hover:scale-105 active:scale-100"
               disabled={loading}
             >
               {loading ? "Cargando..." : "Iniciar Sesión"}
-            </button>
+            </Button>
           </form>
 
-          <span className="text-center mt-2 text-gray-600">
+          <span className="text-sm 2xl:text-base text-center mt-2 text-gray-600">
             ¿No tienes una cuenta?{" "}
             <Link href="/register" className="text-blue-500 hover:underline">
               Registrate aquí

@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { Menu, X } from "lucide-react";
 import { MemberAvatar } from "@/components/common/MemberAvatar";
+import { Button } from "@/components/common/Button";
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);
@@ -25,74 +26,61 @@ export function Header() {
   };
 
   return (
-    <header className="relative flex items-center justify-between px-6 lg:px-16 py-4 bg-white shadow-sm z-50 h-20">
-      <picture className="flex-1">
-        <img
-          className="w-32 lg:w-48"
-          src="/worklyst-logo.svg"
-          alt="Worklyst Logo"
+    <header className="relative  bg-white shadow-sm">
+      <div className="flex items-center justify-between max-w-11/12 2xl:max-w-10/12 mx-auto h-16 2xl:h-20">
+        <picture className="flex items-center gap-2 flex-1">
+          <img className="w-8 lg:w-10" src="/logo.svg" alt="Worklyst Logo" />
+          <h3 className="text-lg 2xl:text-xl font-semibold">WorkLyst</h3>
+        </picture>
+
+        <nav className="hidden xl:flex items-center justify-center gap-8">
+          {NAVBAR_ITEMS.map(({ label, href }) => (
+            <Link
+              key={href}
+              className="text-sm 2xl:text-lg text-gray-700 hover:text-blue-600 hover:scale-105 transition font-medium"
+              href={href}
+            >
+              {label}
+            </Link>
+          ))}
+        </nav>
+
+        <aside
+          className={`hidden xl:flex items-center gap-4 flex-1 justify-end transition-opacity duration-500 ${mounted ? "opacity-100" : "opacity-0"}`}
+        >
+          {mounted && (
+            <>
+              {!user ? (
+                <>
+                  <Button href="/login">Iniciar Sesión</Button>
+                  <Button href="/register" style="secondary">
+                    Crear Cuenta
+                  </Button>
+                </>
+              ) : (
+                <button onClick={handleLogout}>
+                  <MemberAvatar name={user?.nombre || ""} size="lg" />
+                </button>
+              )}
+            </>
+          )}
+        </aside>
+
+        <button
+          className="xl:hidden p-2 text-gray-600 hover:text-blue-600 transition"
+          onClick={() => setIsOpen(!isOpen)}
+          aria-label="Toggle menu"
+        >
+          {isOpen ? <X /> : <Menu />}
+        </button>
+
+        <MobileMenu
+          isOpen={isOpen}
+          setIsOpen={setIsOpen}
+          NavbarItems={NAVBAR_ITEMS}
+          showAuthButtons={showAuthButtons}
         />
-      </picture>
-
-      <nav className="hidden xl:flex items-center justify-center gap-8">
-        {NAVBAR_ITEMS.map(({ label, href }) => (
-          <Link
-            key={href}
-            className="text-xl text-gray-700 hover:text-blue-600 hover:scale-105 transition font-medium"
-            href={href}
-          >
-            {label}
-          </Link>
-        ))}
-      </nav>
-
-      <aside
-        className={`hidden xl:flex items-center gap-4 flex-1 justify-end transition-opacity duration-500 ${mounted ? "opacity-100" : "opacity-0"}`}
-      >
-        {mounted && (
-          <>
-            {!user ? (
-              <>
-                <Link
-                  href="/login"
-                  className="px-5 py-2.5 rounded-lg bg-blue-500 text-white font-medium hover:bg-blue-600 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
-                >
-                  Iniciar Sesión
-                </Link>
-                <Link
-                  href="/register"
-                  className="px-5 py-2.5 rounded-lg border border-gray-200 text-gray-700 font-medium hover:bg-gray-50 hover:border-gray-300 transition-all duration-200"
-                >
-                  Crear Cuenta
-                </Link>
-              </>
-            ) : (
-              <button onClick={handleLogout}>
-                <MemberAvatar
-                  name={user?.nombre || ""}
-                  size="lg"
-                  color="blue"
-                />
-              </button>
-            )}
-          </>
-        )}
-      </aside>
-
-      <button
-        className="xl:hidden p-2 text-gray-600 hover:text-blue-600 transition"
-        onClick={() => setIsOpen(!isOpen)}
-        aria-label="Toggle menu"
-      >
-        {isOpen ? <X /> : <Menu />}
-      </button>
-
-      <MobileMenu
-        isOpen={isOpen}
-        setIsOpen={setIsOpen}
-        NavbarItems={NAVBAR_ITEMS}
-        showAuthButtons={showAuthButtons}
-      />
+      </div>
     </header>
   );
 }

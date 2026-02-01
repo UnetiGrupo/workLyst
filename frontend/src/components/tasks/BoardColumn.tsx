@@ -16,7 +16,7 @@ export function BoardColumn({
   return (
     <section className="flex flex-col gap-8 max-w-full">
       <header className="flex items-center gap-4">
-        <h2 className="flex items-center gap-2 text-lg">
+        <h2 className="flex items-center gap-2 text-base 2xl:text-lg">
           <Icon className={`${color} size-5`} /> {title}
         </h2>
         <span className="flex items-center justify-center text-sm text-gray-700 bg-gray-200 size-5 rounded-full">

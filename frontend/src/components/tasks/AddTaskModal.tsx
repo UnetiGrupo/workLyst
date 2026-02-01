@@ -7,6 +7,7 @@ import { UserSearchSelect } from "./UserSearchSelect";
 import { useTasks } from "@/contexts/TasksContext";
 import { Task, User } from "@/lib/types";
 import { useUsers } from "@/contexts/UsersContext";
+import { Button } from "@/components/common/Button";
 
 interface AddTaskModalProps {
   closeModal: () => void;
@@ -66,22 +67,22 @@ export function AddTaskModal({
   return (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 opacity-0"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-2 2xl:p-4 opacity-0"
     >
       <article
         ref={contentRef}
-        className="flex flex-col gap-6 bg-white p-8 rounded-2xl max-w-md w-full shadow-2xl"
+        className="flex flex-col gap-2 2xl:gap-6 bg-white p-4 2xl:p-8 rounded-2xl max-w-sm 2xl:max-w-md w-full shadow-2xl"
       >
         <header className="flex items-center justify-between">
-          <h4 className="text-2xl font-bold text-gray-900">
+          <h4 className="text-lg 2xl:text-2xl font-bold text-gray-900">
             {taskToEdit ? "Editar Tarea" : "Nueva Tarea"}
           </h4>
           <button onClick={closeModal} type="button">
-            <X className="size-6 text-gray-400 hover:text-red-500" />
+            <X className="size-5 2xl:size-6 text-gray-400 hover:text-red-500" />
           </button>
         </header>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-2 2xl:gap-5">
           <ProjectInput
             label="Título"
             name="titulo"
@@ -89,7 +90,7 @@ export function AddTaskModal({
             placeholder="Ej. Diseño de la página de inicio"
             required
           />
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-1 2xl:gap-2">
             <label className="text-sm font-semibold">Descripción</label>
             <textarea
               name="descripcion"
@@ -111,12 +112,9 @@ export function AddTaskModal({
             selectedUser={selectedUser}
             onSelect={setSelectedUser}
           />
-          <button
-            type="submit"
-            className="w-full py-4 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 shadow-lg"
-          >
+          <Button type="submit" style="primary" className="mt-2">
             {taskToEdit ? "Guardar Cambios" : "Crear Tarea"}
-          </button>
+          </Button>
         </form>
       </article>
     </div>

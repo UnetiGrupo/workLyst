@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   title: "Worklyst",
   description: "Gestor de proyectos para equipos",
   icons: {
-    icon: "/worklyst.svg",
+    icon: "/logo.svg",
   },
 };
 
