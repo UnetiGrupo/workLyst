@@ -9,7 +9,7 @@ import Link from "next/link";
 // Context
 import { useAuth } from "@/contexts/AuthContext";
 // Hooks
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 // Animaciones
 import { animations } from "@/lib/animations";
 import { useAnimations } from "@/hooks/useAnimations";

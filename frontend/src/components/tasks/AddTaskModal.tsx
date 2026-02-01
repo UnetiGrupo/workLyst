@@ -1,101 +1,121 @@
 "use client";
-
-// Hooks
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useProjectModalAnimation } from "@/hooks/useProjectModalAnimation";
-// Icons
-import { Search, X } from "lucide-react";
-// Components
+import { X } from "lucide-react";
 import { ProjectInput } from "@/components/projects/ProjectInput";
-// Context
+import { UserSearchSelect } from "./UserSearchSelect";
 import { useTasks } from "@/contexts/TasksContext";
-import { Task } from "@/lib/types";
+import { Task, User } from "@/lib/types";
+import { useUsers } from "@/contexts/UsersContext";
 
 interface AddTaskModalProps {
   closeModal: () => void;
   showModal: boolean;
   projectId: string;
+  taskToEdit?: Task | null; // Nueva prop
 }
 
 export function AddTaskModal({
   closeModal,
   showModal,
   projectId,
+  taskToEdit,
 }: AddTaskModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const { createTask, updateTask } = useTasks();
+  const { usersMap } = useUsers();
+
+  // Si estamos editando, cargar el usuario asignado inicialmente
+  useEffect(() => {
+    if (taskToEdit?.asignado_a) {
+      setSelectedUser(usersMap[taskToEdit.asignado_a] || null);
+    } else {
+      setSelectedUser(null);
+    }
+  }, [taskToEdit, usersMap, showModal]);
 
   useProjectModalAnimation(showModal, overlayRef, contentRef);
 
-  const { createTask } = useTasks();
-
-  const handleCreateTask = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
 
-    const taskData: Task = {
+    const taskData: Partial<Task> = {
       titulo: formData.get("titulo") as string,
       descripcion: formData.get("descripcion") as string,
       fechaLimite: formData.get("fechaLimite") as string,
-      asignadoA: formData.get("asignadoA") as string,
-      estado: formData.get("estado") as "pending" | "completed" | "in-progress",
+      asignado_a: selectedUser ? selectedUser.id : undefined,
+      estado: taskToEdit ? taskToEdit.estado : "pending",
     };
 
-    await createTask(projectId, taskData);
-    closeModal();
+    let success;
+    if (taskToEdit) {
+      success = await updateTask(taskToEdit.id!, taskData);
+    } else {
+      success = await createTask(projectId, taskData as Task);
+    }
+
+    if (success) {
+      setSelectedUser(null);
+      closeModal();
+    }
   };
 
   return (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 opacity-0"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 opacity-0"
     >
       <article
         ref={contentRef}
-        className="flex flex-col gap-4 bg-white p-6 rounded-lg max-w-md w-full"
+        className="flex flex-col gap-6 bg-white p-8 rounded-2xl max-w-md w-full shadow-2xl"
       >
         <header className="flex items-center justify-between">
-          <h4 className="text-xl font-medium">Nueva Tarea</h4>
-          <button onClick={closeModal}>
-            <X className="p-2 size-10 rounded-lg text-gray-600 hover:bg-red-500 hover:text-white transition-colors duration-200" />
+          <h4 className="text-2xl font-bold text-gray-900">
+            {taskToEdit ? "Editar Tarea" : "Nueva Tarea"}
+          </h4>
+          <button onClick={closeModal} type="button">
+            <X className="size-6 text-gray-400 hover:text-red-500" />
           </button>
         </header>
-        <form onSubmit={handleCreateTask} className="flex flex-col gap-4">
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           <ProjectInput
-            label="Titulo"
+            label="Título"
             name="titulo"
-            placeholder="Ej. Diseñar la interfaz de usuario"
+            defaultValue={taskToEdit?.titulo}
+            placeholder="Ej. Diseño de la página de inicio"
+            required
           />
-          <ProjectInput
-            label="Descripcion"
-            name="descripcion"
-            placeholder="Describe la tarea"
-          />
-          <label className="flex flex-col gap-2">
-            Fecha Limite
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-semibold">Descripción</label>
+            <textarea
+              name="descripcion"
+              defaultValue={taskToEdit?.descripcion}
+              className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm min-h-24 outline-none focus:border-blue-500"
+              placeholder="Descripción de la tarea"
+            />
+          </div>
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-semibold">Fecha límite</label>
             <input
               type="date"
               name="fechaLimite"
-              id="fechaLimite"
-              className="border border-gray-300 rounded-lg px-4 py-2"
-            />
-          </label>
-          <div className="relative mt-2">
-            <Search
-              className={`absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400`}
-            />
-            <input
-              type="text"
-              name="asignadoA"
-              placeholder="Asignar a..."
-              className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-xl text-sm outline-none focus:border-blue-500 transition-all"
+              defaultValue={taskToEdit?.fechaLimite}
+              className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm"
             />
           </div>
+          <UserSearchSelect
+            selectedUser={selectedUser}
+            onSelect={setSelectedUser}
+          />
           <button
             type="submit"
-            className="w-full py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600 transition-colors"
+            className="w-full py-4 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 shadow-lg"
           >
-            Crear Tarea
+            {taskToEdit ? "Guardar Cambios" : "Crear Tarea"}
           </button>
         </form>
       </article>

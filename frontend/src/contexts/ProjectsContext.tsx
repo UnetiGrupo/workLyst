@@ -45,14 +45,16 @@ export function ProjectsProvider({ children }: { children: React.ReactNode }) {
   const { mounted, user } = useAuth();
   const { addToast } = useToast();
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
+  const APP_API_KEY = process.env.NEXT_PUBLIC_APP_API_KEY;
 
   // Helper para headers (fácil de cambiar cuando cambie la auth)
   const getAuthHeaders = useCallback(() => {
-    const token = localStorage.getItem("tokenAcceso");
+    const token = localStorage.getItem("sessionToken");
     return {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
+        "x-api-key": APP_API_KEY,
       },
     };
   }, []);
@@ -77,7 +79,7 @@ export function ProjectsProvider({ children }: { children: React.ReactNode }) {
       addToast(msg, "error");
       setStates({ loading: false, error: msg, success: false });
     }
-  }, [mounted, user, API_URL, getAuthHeaders, addToast]);
+  }, [mounted, user, API_URL, APP_API_KEY, getAuthHeaders, addToast]);
 
   const getProjectById = useCallback(
     async (id: string) => {
@@ -97,7 +99,7 @@ export function ProjectsProvider({ children }: { children: React.ReactNode }) {
         setStates({ loading: false, error: msg, success: false });
       }
     },
-    [mounted, user, API_URL, getAuthHeaders, addToast],
+    [mounted, user, API_URL, APP_API_KEY, getAuthHeaders, addToast],
   );
 
   const createProject = useCallback(
@@ -126,7 +128,7 @@ export function ProjectsProvider({ children }: { children: React.ReactNode }) {
         setIsCreating(false);
       }
     },
-    [mounted, user, API_URL, getAuthHeaders, addToast],
+    [mounted, user, API_URL, APP_API_KEY, getAuthHeaders, addToast],
   );
 
   // Función genérica para actualizar el estado local de proyectos y el seleccionado
@@ -146,12 +148,16 @@ export function ProjectsProvider({ children }: { children: React.ReactNode }) {
       setIsCreating(true);
       startAction();
       try {
-        const response = await axios.put(
+        await axios.put(
           `${API_URL}/api/projects/${id}`,
           projectData,
           getAuthHeaders(),
         );
-        updateLocalProjectState(response.data);
+        const projectResponse = await axios.get(
+          `${API_URL}/api/projects/${id}`,
+          getAuthHeaders(),
+        );
+        updateLocalProjectState(projectResponse.data);
         setStates((prev) => ({ ...prev, loading: false, success: true }));
         addToast("Proyecto actualizado", "success");
         return true;
@@ -164,7 +170,15 @@ export function ProjectsProvider({ children }: { children: React.ReactNode }) {
         setIsCreating(false);
       }
     },
-    [mounted, user, API_URL, getAuthHeaders, addToast, updateLocalProjectState],
+    [
+      mounted,
+      user,
+      API_URL,
+      APP_API_KEY,
+      getAuthHeaders,
+      addToast,
+      updateLocalProjectState,
+    ],
   );
 
   const deleteProject = useCallback(
@@ -188,7 +202,15 @@ export function ProjectsProvider({ children }: { children: React.ReactNode }) {
         setIsCreating(false);
       }
     },
-    [mounted, user, API_URL, getAuthHeaders, addToast, selectedProject],
+    [
+      mounted,
+      user,
+      API_URL,
+      APP_API_KEY,
+      getAuthHeaders,
+      addToast,
+      selectedProject,
+    ],
   );
 
   const addMember = useCallback(
@@ -197,12 +219,19 @@ export function ProjectsProvider({ children }: { children: React.ReactNode }) {
       setIsCreating(true);
       startAction();
       try {
-        const response = await axios.post(
+        await axios.post(
           `${API_URL}/api/projects/${id}/members`,
           { usuarioId: userId, rolId },
           getAuthHeaders(),
         );
-        updateLocalProjectState(response.data);
+
+        // Actualizar el proyecto local
+        const projectResponse = await axios.get(
+          `${API_URL}/api/projects/${id}`,
+          getAuthHeaders(),
+        );
+
+        updateLocalProjectState(projectResponse.data);
         setStates((prev) => ({ ...prev, loading: false, success: true }));
         addToast("Miembro agregado", "success");
         return true;
@@ -215,7 +244,15 @@ export function ProjectsProvider({ children }: { children: React.ReactNode }) {
         setIsCreating(false);
       }
     },
-    [mounted, user, API_URL, getAuthHeaders, addToast, updateLocalProjectState],
+    [
+      mounted,
+      user,
+      API_URL,
+      APP_API_KEY,
+      getAuthHeaders,
+      addToast,
+      updateLocalProjectState,
+    ],
   );
 
   const removeMember = useCallback(
@@ -224,11 +261,18 @@ export function ProjectsProvider({ children }: { children: React.ReactNode }) {
       setIsCreating(true);
       startAction();
       try {
-        const response = await axios.delete(
+        await axios.delete(
           `${API_URL}/api/projects/${id}/members/${userId}`,
           getAuthHeaders(),
         );
-        updateLocalProjectState(response.data);
+
+        // Fetch el proyecto actualizado
+        const projectResponse = await axios.get(
+          `${API_URL}/api/projects/${id}`,
+          getAuthHeaders(),
+        );
+
+        updateLocalProjectState(projectResponse.data);
         setStates((prev) => ({ ...prev, loading: false, success: true }));
         addToast("Miembro eliminado", "success");
         return true;
@@ -242,7 +286,15 @@ export function ProjectsProvider({ children }: { children: React.ReactNode }) {
         setIsCreating(false);
       }
     },
-    [mounted, user, API_URL, getAuthHeaders, addToast, updateLocalProjectState],
+    [
+      mounted,
+      user,
+      API_URL,
+      APP_API_KEY,
+      getAuthHeaders,
+      addToast,
+      updateLocalProjectState,
+    ],
   );
 
   return (

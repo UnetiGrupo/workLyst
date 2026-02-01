@@ -9,7 +9,7 @@ import { useUsers } from "@/contexts/UsersContext";
 // Types
 import { Project, User } from "@/lib/types";
 // Icons
-import { Plus, Search, X, UserPlus, Pencil } from "lucide-react";
+import { Plus, Search, X, UserPlus, Pencil, Loader2 } from "lucide-react";
 // Components
 import { ProjectInput } from "./ProjectInput";
 import { MemberAvatar } from "@/components/common/MemberAvatar";
@@ -31,6 +31,7 @@ export function CreateProjectModal({
 }: ProjectModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const [loadingAction, setLoadingAction] = useState(false);
 
   // -- LOGICA PARA MIEMBROS --
   const [selectedMembers, setSelectedMembers] = useState<User[]>([]);
@@ -78,20 +79,26 @@ export function CreateProjectModal({
 
   const handleCreateProject = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (loadingAction) return;
+    setLoadingAction(true);
     const formData = new FormData(e.currentTarget);
 
     const projectData: Project = {
       ...initialData,
       nombre: formData.get("nombre") as string,
       descripcion: formData.get("descripcion") as string,
-      miembros: selectedMembers.map((m) => m.id!),
+      miembros: selectedMembers.map((m) => m.id!) as any,
     };
 
-    const success = await onSubmit(projectData);
-    if (success) {
-      setShowModal(false);
-      setSelectedMembers([]);
-      setSearchTerm("");
+    try {
+      const success = await onSubmit(projectData);
+      if (success) {
+        setShowModal(false);
+        setSelectedMembers([]);
+        setSearchTerm("");
+      }
+    } finally {
+      setLoadingAction(false);
     }
   };
 
@@ -124,6 +131,7 @@ export function CreateProjectModal({
             <ProjectInput
               key={input.name}
               {...input}
+              required={input.name === "nombre"}
               defaultValue={
                 initialData
                   ? (initialData[input.name as keyof Project] as string)
@@ -140,15 +148,18 @@ export function CreateProjectModal({
 
               {/* Chips de seleccionados */}
               <div className="flex flex-wrap gap-2">
-                {selectedMembers.map((m) => (
+                {selectedMembers.map((miembro) => (
                   <div
-                    key={m.id}
+                    key={miembro.id}
                     className="flex items-center gap-2 bg-blue-50 text-blue-600 px-2 py-1 rounded-lg text-xs border border-blue-100"
                   >
                     <span className="truncate max-w-[100px]">
-                      {m.nombre || m.usuario}
+                      {miembro.nombre || miembro.usuario}
                     </span>
-                    <button type="button" onClick={() => removeMember(m.id!)}>
+                    <button
+                      type="button"
+                      onClick={() => removeMember(miembro.id!)}
+                    >
                       <X className="size-3" />
                     </button>
                   </div>
@@ -173,24 +184,24 @@ export function CreateProjectModal({
                 {/* Dropdown de resultados filtrados */}
                 {searchResults.length > 0 && (
                   <ul className="absolute z-50 w-full mt-2 bg-white border border-gray-100 rounded-xl shadow-xl max-h-40 overflow-y-auto p-1">
-                    {searchResults.map((u) => (
-                      <li key={u.id}>
+                    {searchResults.map((user) => (
+                      <li key={user.id}>
                         <button
                           type="button"
-                          onClick={() => addMember(u)}
+                          onClick={() => addMember(user)}
                           className="w-full flex items-center justify-between p-2 hover:bg-blue-50 rounded-lg transition-colors group"
                         >
                           <div className="flex items-center gap-2 text-left">
                             <MemberAvatar
-                              name={u.nombre || ""}
+                              name={user.nombre || user.usuario}
                               className="size-6"
                             />
                             <div>
                               <p className="text-xs font-bold">
-                                {u.nombre || u.usuario}
+                                {user.nombre || user.usuario}
                               </p>
                               <p className="text-[10px] text-gray-500">
-                                {u.email}
+                                {user.email}
                               </p>
                             </div>
                           </div>
@@ -216,9 +227,14 @@ export function CreateProjectModal({
           <button
             type="submit"
             form="project-form"
-            className="flex items-center gap-2 px-6 py-2 rounded-xl bg-blue-500 text-white font-medium shadow-lg shadow-blue-500/25"
+            disabled={loadingAction}
+            className={`flex items-center gap-2 px-6 py-2 rounded-xl bg-blue-500 text-white font-medium shadow-lg shadow-blue-500/25 transition-all ${
+              loadingAction ? "opacity-70 cursor-not-allowed" : ""
+            }`}
           >
-            {initialData ? (
+            {loadingAction ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : initialData ? (
               <Pencil className="size-4" />
             ) : (
               <Plus className="size-4" />

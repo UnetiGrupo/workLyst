@@ -1,13 +1,14 @@
 // Components
 import Link from "next/link";
 import { ProjectStateTag } from "./ProjectStateTag";
-import { MemberAvatar } from "@/components/common/MemberAvatar";
 import { Dropdown, DropdownItem } from "@/components/common/Dropdown";
 import { AddMemberModal } from "./AddMemberModal";
 import { CreateProjectModal } from "./CreateProjectModal";
 import { RemoveMemberModal } from "./RemoveMemberModal";
+import { ConfirmDeletion } from "@/components/common/ConfirmDeletion";
+import { MemberAvatarSmart } from "@/components/common/MemberAvatarSmart";
 // Hooks
-import { useState } from "react";
+import { useState, useEffect } from "react";
 // Icons
 import {
   Ellipsis,
@@ -16,22 +17,20 @@ import {
   UserMinus,
   UserPlus,
   Trash2,
+  Calendar,
 } from "lucide-react";
 // Types
 import type { Project, User } from "@/lib/types";
 // Contexts
-import { useUsers } from "@/contexts/UsersContext";
 import { useProjects } from "@/contexts/ProjectsContext";
-import { ConfirmDeletion } from "../common/ConfirmDeletion";
 
 export function ProjectCard(project: Project) {
   const {
     id,
     nombre,
     descripcion,
-    miembros = [],
-    creadorId,
     estado,
+    creadorId,
     creadoEn,
     actualizadoEn,
   } = project;
@@ -41,7 +40,6 @@ export function ProjectCard(project: Project) {
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
   const [showRemoveMemberModal, setShowRemoveMemberModal] = useState(false);
 
-  const { getUserById } = useUsers();
   const { updateProject, deleteProject, addMember, removeMember } =
     useProjects();
 
@@ -142,10 +140,6 @@ export function ProjectCard(project: Project) {
     setShowDropdown(!showDropdown);
   };
 
-  // Forzamos una lista de miembros: si no hay, usamos al creador
-  const displayMembers =
-    miembros && miembros.length > 0 ? miembros : creadorId ? [creadorId] : [];
-
   const formatDate = (dateString?: string) => {
     if (!dateString) return "No disponible";
     const date = new Date(dateString);
@@ -162,7 +156,7 @@ export function ProjectCard(project: Project) {
         href={`/projects/${id}`}
         onClick={(e) => showDropdown && e.preventDefault()}
       >
-        <article className="flex flex-col gap-4 p-6 rounded-xl border border-gray-200 shadow-lg shadow-gray-500 hover:-translate-y-1 hover:border-blue-500/80 hover:shadow-blue-500/50 transition-all duration-300">
+        <article className="flex flex-col h-full gap-4 p-6 rounded-xl border border-gray-200 shadow-lg shadow-gray-500 hover:-translate-y-1 hover:border-blue-500/80 hover:shadow-blue-500/50 transition-all duration-300">
           <header className="flex items-center justify-between border-b border-gray-200 pb-2">
             <h3 className="text-xl font-semibold">{nombre}</h3>
             <div className="relative">
@@ -176,8 +170,9 @@ export function ProjectCard(project: Project) {
               />
             </div>
           </header>
-          <div className="flex flex-col gap-4 border-b border-gray-200 pb-4">
-            <span className="text-sm text-gray-500">
+          <div className="flex flex-col gap-4 border-b border-gray-200 pb-4 flex-1">
+            <span className="flex items-center gap-2 text-sm text-gray-500">
+              <Calendar className="size-4" />
               Creado: {formatDate(creadoEn)}
             </span>
             <p className="text-gray-700">{descripcion}</p>
@@ -186,16 +181,29 @@ export function ProjectCard(project: Project) {
             />
           </div>
           <footer className="flex items-center justify-between">
-            <ul className="flex items-center gap-2">
-              {displayMembers.map((uuid) => {
-                const member = getUserById(uuid);
+            <ul className="flex items-center">
+              {[...(project.miembros || [])]
+                .sort((a) => (creadorId === a.nombre ? -1 : 1))
+                .map((miembro) => {
+                  const isCreator = creadorId === miembro.nombre;
 
-                return (
-                  <li key={uuid}>
-                    <MemberAvatar name={member?.nombre || ""} />
-                  </li>
-                );
-              })}
+                  return (
+                    <li key={miembro.id} className="-ml-2 relative group">
+                      <div className="relative">
+                        <MemberAvatarSmart userId={miembro.id} />
+                        {isCreator && (
+                          <span
+                            title="Creador del proyecto"
+                            className="absolute -top-0.5 right-1 flex h-3 w-3 z-10"
+                          >
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500 border border-white"></span>
+                          </span>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
             </ul>
             <span className="flex items-center gap-2 text-sm text-gray-600">
               <RefreshCw className="size-4" />
@@ -230,7 +238,7 @@ export function ProjectCard(project: Project) {
           isOpen={showAddMemberModal}
           onClose={() => setShowAddMemberModal(false)}
           onAddMember={handleAddMemberSubmit}
-          currentMembers={miembros}
+          currentMembers={project.miembros || []}
         />
       )}
 
@@ -240,7 +248,11 @@ export function ProjectCard(project: Project) {
           isOpen={showRemoveMemberModal}
           onClose={() => setShowRemoveMemberModal(false)}
           onRemoveMember={handleRemoveMemberSubmit}
-          memberIds={miembros}
+          memberIds={
+            (project.miembros || []).map((m) =>
+              typeof m === "string" ? m : m.id,
+            ) as string[]
+          }
         />
       )}
     </>

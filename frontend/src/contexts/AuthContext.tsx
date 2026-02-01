@@ -9,6 +9,7 @@ interface AuthContextType {
   login: (formData: User) => Promise<void>;
   logout: () => Promise<void>;
   user: User | null;
+  token: string | null;
   mounted: boolean;
   states: {
     loading: boolean;
@@ -20,16 +21,8 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(() => {
-    try {
-      const storedUser = localStorage.getItem("usuario");
-      const storedToken = localStorage.getItem("tokenAcceso");
-      return storedUser && storedToken ? JSON.parse(storedUser) : null;
-    } catch (err: any) {
-      console.error("Error rehydrating auth state:", err);
-      return null;
-    }
-  });
+  const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
   const [states, setStates] = useState({
     loading: false,
     error: null,
@@ -42,130 +35,113 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { addToast } = useToast();
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
+  const APP_API_KEY = process.env.NEXT_PUBLIC_APP_API_KEY;
 
   useEffect(() => {
-    try {
-      const storedUser = localStorage.getItem("usuario");
-      const storedToken = localStorage.getItem("tokenAcceso");
+    const initializeAuth = () => {
+      try {
+        const storedUser = localStorage.getItem("usuario");
+        const storedToken = localStorage.getItem("sessionToken");
 
-      if (storedUser && storedToken) {
-        setUser(JSON.parse(storedUser));
+        if (storedUser && storedToken) {
+          setUser(JSON.parse(storedUser));
+          setToken(storedToken);
+        }
+      } catch (err) {
+        console.error("Error al recuperar la sesión:", err);
+        localStorage.removeItem("usuario");
+        localStorage.removeItem("sessionToken");
+      } finally {
+        setMounted(true);
       }
-    } catch (err) {
-      console.error("Error al recuperar la sesión:", err);
-    } finally {
-      setMounted(true);
-    }
+    };
+    initializeAuth();
   }, []);
 
+  const authConfig = {
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": APP_API_KEY,
+    },
+  };
+
   const register = async (formData: User) => {
-    setStates({
-      loading: true,
-      error: null,
-      success: false,
-    });
+    setStates({ loading: true, error: null, success: false });
     try {
       const response = await axios.post(
         `${API_URL}/api/auth/register`,
         formData,
+        authConfig,
       );
       setUser((prevUser) => ({
         ...prevUser,
         ...response.data.usuario,
       }));
       localStorage.setItem("usuario", JSON.stringify(response.data.usuario));
-      setStates({
-        loading: false,
-        error: null,
-        success: true,
-      });
+      setStates((prev) => ({ ...prev, success: true }));
       addToast("Cuenta creada exitosamente. ¡Bienvenido!", "success");
       router.push("/login");
     } catch (error: any) {
       const msg =
-        error.response.data.message || "Error al registrar el usuario";
-      setStates({
-        loading: false,
-        error: msg,
-        success: false,
-      });
+        error.response?.data?.mensaje || "Error al registrar el usuario";
+      setStates((prev) => ({ ...prev, error: msg, success: false }));
     } finally {
-      setStates({
-        loading: false,
-        error: null,
-        success: false,
-      });
+      setStates((prev) => ({ ...prev, loading: false }));
     }
   };
 
   const login = async (formData: User) => {
-    setStates({
-      loading: true,
-      error: null,
-      success: false,
-    });
+    setStates({ loading: true, error: null, success: false });
     try {
-      const response = await axios.post(`${API_URL}/api/auth/login`, formData);
-      setUser((prevUser) => ({
-        ...prevUser,
-        ...response.data.usuario,
-      }));
-      const { tokenAcceso, tokenActualizacion, usuario } = response.data;
-      localStorage.setItem("tokenAcceso", tokenAcceso);
-      localStorage.setItem("tokenActualizacion", tokenActualizacion);
+      const response = await axios.post(
+        `${API_URL}/api/auth/login`,
+        formData,
+        authConfig,
+      );
+      const { sessionToken, usuario } = response.data;
+
+      // Guardando datos de la respuesta (usuario)
+      setUser(usuario);
+      setToken(sessionToken);
+
+      localStorage.setItem("sessionToken", sessionToken);
       localStorage.setItem("usuario", JSON.stringify(usuario));
-      setStates({
-        loading: false,
-        error: null,
-        success: true,
-      });
+      setStates((prev) => ({ ...prev, success: true }));
       addToast(`Bienvenido de nuevo, ${usuario.nombre}`, "success");
       router.push("/projects");
     } catch (error: any) {
-      const msg = error.response.data.message || "Error al iniciar sesión";
-      setStates({
-        loading: false,
-        error: msg,
-        success: false,
-      });
+      const msg = error.response?.data?.mensaje || "Error al iniciar sesión";
+      setStates((prev) => ({ ...prev, error: msg, success: false }));
     } finally {
-      setStates({
-        loading: false,
-        error: null,
-        success: false,
-      });
+      setStates((prev) => ({ ...prev, loading: false }));
     }
   };
 
   const logout = async () => {
+    setStates({ loading: true, error: null, success: false });
     try {
-      await axios.post(`${API_URL}/api/auth/logout`, {
-        tokenActualizacion: localStorage.getItem("tokenActualizacion"),
-      });
-      localStorage.removeItem("tokenAcceso");
-      localStorage.removeItem("tokenActualizacion");
+      const sessionToken = token || localStorage.getItem("sessionToken");
+
+      if (sessionToken) {
+        // Enviando token para invalidar sesión en backend
+        const payload = { sessionToken };
+
+        await axios.post(`${API_URL}/api/auth/logout`, payload, authConfig);
+      }
+
+      addToast("Sesión cerrada correctamente", "info");
+    } catch (error: any) {
+      console.warn("Error logout API:", error);
+      // No mostramos error UI bloqueante, el usuario quiere salir de todos modos
+    } finally {
+      // SIEMPRE limpiamos localmente
+      localStorage.removeItem("sessionToken");
       localStorage.removeItem("usuario");
       setUser(null);
-      setStates({
-        loading: false,
-        error: null,
-        success: true,
-      });
-      addToast("Sesión cerrada correctamente", "info");
+      setToken(null);
+
+      setStates((prev) => ({ ...prev, loading: false }));
       router.push("/login");
-    } catch (error: any) {
-      const msg = error.response?.data?.message || "Error al cerrar sesión";
-      setStates({
-        loading: false,
-        error: msg,
-        success: false,
-      });
-    } finally {
-      setStates({
-        loading: false,
-        error: null,
-        success: false,
-      });
     }
   };
 
@@ -176,6 +152,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         login,
         logout,
         user,
+        token,
         mounted,
         states,
       }}

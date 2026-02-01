@@ -8,13 +8,18 @@ import { useUsers } from "@/contexts/UsersContext";
 // Types
 import type { User } from "@/lib/types";
 // Icons
-import { Search, X, UserPlus } from "lucide-react";
+import { Search, X, UserPlus, Loader2 } from "lucide-react";
 
 interface AddMemberModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAddMember: (user: User) => Promise<boolean>;
-  currentMembers?: string[];
+  currentMembers?: {
+    id: string;
+    nombre: string;
+    email: string;
+    rol: string;
+  }[];
 }
 
 export function AddMemberModal({
@@ -25,6 +30,7 @@ export function AddMemberModal({
 }: AddMemberModalProps) {
   // Estados
   const [searchTerm, setSearchTerm] = useState("");
+  const [addingId, setAddingId] = useState<string | null>(null);
 
   const debouncedSearch = useDebounce(searchTerm, 500);
   const { searchUsers, usersMap, loading } = useUsers();
@@ -48,7 +54,7 @@ export function AddMemberModal({
         user.usuario?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.email?.toLowerCase().includes(searchTerm.toLowerCase());
 
-      const isNotMember = !currentMembers.includes(user.id!);
+      const isNotMember = !currentMembers.some((m) => m.id === user.id);
 
       return matchesSearch && isNotMember;
     });
@@ -93,6 +99,7 @@ export function AddMemberModal({
             {filteredResults.map((user) => (
               <li key={user.id}>
                 <button
+                  disabled={!!addingId}
                   onClick={async (e) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -104,10 +111,17 @@ export function AddMemberModal({
                       return;
                     }
 
-                    const success = await onAddMember(user);
-                    if (success) onClose();
+                    setAddingId(user.id);
+                    try {
+                      const success = await onAddMember(user);
+                      if (success) onClose();
+                    } finally {
+                      setAddingId(null);
+                    }
                   }}
-                  className="w-full flex items-center gap-3 p-3 hover:bg-blue-50 rounded-xl group transition-all border border-transparent hover:border-blue-100"
+                  className={`w-full flex items-center gap-3 p-3 hover:bg-blue-50 rounded-xl group transition-all border border-transparent hover:border-blue-100 ${
+                    addingId ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
                 >
                   <div className="size-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold uppercase shrink-0">
                     {(user.nombre || user.usuario || "?").charAt(0)}
@@ -120,7 +134,11 @@ export function AddMemberModal({
                       {user.email}
                     </p>
                   </div>
-                  <UserPlus className="size-5 text-gray-300 group-hover:text-blue-600" />
+                  {addingId === user.id ? (
+                    <Loader2 className="size-5 text-blue-600 animate-spin" />
+                  ) : (
+                    <UserPlus className="size-5 text-gray-300 group-hover:text-blue-600" />
+                  )}
                 </button>
               </li>
             ))}

@@ -32,6 +32,7 @@ interface TasksContextType {
   deleteTask: (taskId: string) => Promise<boolean>;
   setSelectedTask: (task: Task | null) => void;
   selectedTask: Task | null;
+  assignTask: (taskId: string, userId: string) => Promise<boolean>;
 }
 
 export const TasksContext = createContext<TasksContextType | null>(null);
@@ -45,17 +46,18 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
   const { mounted, user } = useAuth();
   const { addToast } = useToast();
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
+  const APP_API_KEY = process.env.NEXT_PUBLIC_APP_API_KEY;
 
-  const getAuthHeaders = useCallback(
-    () => ({
+  const getAuthHeaders = useCallback(() => {
+    const token = localStorage.getItem("sessionToken");
+    return {
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("tokenAcceso")}`,
+        Authorization: `Bearer ${token}`,
+        "x-api-key": APP_API_KEY,
       },
-    }),
-    [],
-  );
-
+    };
+  }, []);
   // --- COLUMNAS DERIVADAS (Single Source of Truth) ---
   const columns = useMemo(() => {
     return {
@@ -82,7 +84,7 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
         setLoading(false);
       }
     },
-    [mounted, user, API_URL, getAuthHeaders],
+    [mounted, user, API_URL, APP_API_KEY, getAuthHeaders],
   );
 
   // --- CREAR TAREA ---
@@ -113,43 +115,39 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
         setLoading(false);
       }
     },
-    [API_URL, getAuthHeaders, addToast, fetchTasks],
+    [API_URL, APP_API_KEY, getAuthHeaders, addToast, fetchTasks],
   );
 
-  // --- ACTUALIZAR / MOVER TAREA (PATCH) ---
+  // --- ACTUALIZAR / MOVER TAREA (PUT) ---
   const updateTask = useCallback(
     async (taskId: string, updates: Partial<Task>) => {
-      // Actualización Optimista
-      const originalTasks = [...tasks];
-      setTasks((prev) =>
-        prev.map((t) => (t.id === taskId ? { ...t, ...updates } : t)),
-      );
+      // 1. Guardamos una referencia para revertir si falla
+      // Pero ojo: no podemos usar "originalTasks" directamente del scope si es vieja
+      let previousTasks: Task[] = [];
+
+      setTasks((prev) => {
+        previousTasks = prev; // Guardamos el estado actual justo antes de cambiarlo
+        return prev.map((t) => (t.id === taskId ? { ...t, ...updates } : t));
+      });
 
       try {
-        await axios.patch(
+        await axios.put(
           `${API_URL}/api/tasks/${taskId}`,
           updates,
           getAuthHeaders(),
         );
         return true;
       } catch (error) {
-        setTasks(originalTasks);
+        // 2. Si falla, restauramos el estado anterior
+        setTasks(previousTasks);
         addToast("No se pudo actualizar la tarea", "error");
         return false;
       }
     },
-    [tasks, API_URL, getAuthHeaders, addToast],
+    [API_URL, getAuthHeaders, addToast], // Quitamos 'tasks' de aquí
   );
 
-  // Helper específico para el Drag & Drop
-  const moveTask = (
-    taskId: string,
-    newStatus: "pending" | "in-progress" | "completed",
-  ) => {
-    return updateTask(taskId, { estado: newStatus });
-  };
-
-  // -- ELIMINAR TAREA --
+  // --- ELIMINAR TAREA (DELETE) ---
   const deleteTask = useCallback(
     async (taskId: string) => {
       try {
@@ -162,8 +160,42 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
         return false;
       }
     },
-    [API_URL, getAuthHeaders, addToast],
+    [API_URL, APP_API_KEY, getAuthHeaders, addToast],
   );
+
+  // --- ASIGNAR TAREA (PATCH) ---
+  const assignTask = useCallback(
+    async (taskId: string, userId: string) => {
+      setLoading(true);
+      try {
+        await axios.patch(
+          `${API_URL}/api/tasks/${taskId}/assign`,
+          {
+            asignado_a: userId,
+          },
+          getAuthHeaders(),
+        );
+        addToast("Tarea asignada correctamente", "success");
+        return true;
+      } catch (error) {
+        addToast("No se pudo asignar la tarea", "error");
+        return false;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [API_URL, APP_API_KEY, getAuthHeaders, addToast],
+  );
+
+  // Helper específico para el Drag & Drop
+  const moveTask = (
+    taskId: string,
+    newStatus: "pending" | "in-progress" | "completed",
+  ) => {
+    return updateTask(taskId, { estado: newStatus });
+  };
+
+  // -- ELIMINAR TAREA --
 
   return (
     <TasksContext.Provider
@@ -179,6 +211,7 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
         moveTask,
         deleteTask,
         setSelectedTask,
+        assignTask,
         selectedTask,
       }}
     >

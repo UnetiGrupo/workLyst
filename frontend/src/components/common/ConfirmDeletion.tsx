@@ -1,6 +1,7 @@
 "use client";
 
-import { Trash2 } from "lucide-react";
+import { Trash2, Loader2 } from "lucide-react";
+import { useState } from "react";
 
 export function ConfirmDeletion({
   isOpen,
@@ -13,6 +14,7 @@ export function ConfirmDeletion({
   onSubmit: () => Promise<boolean | void>;
   type: "project" | "task";
 }) {
+  const [loading, setLoading] = useState(false);
   if (!isOpen) return null;
 
   return (
@@ -40,12 +42,22 @@ export function ConfirmDeletion({
           <button
             onClick={async (e) => {
               e.stopPropagation();
-              const success = await onSubmit();
-              if (success) onClose();
+              setLoading(true);
+              try {
+                const success = await onSubmit();
+                if (success) onClose();
+              } finally {
+                setLoading(false);
+              }
             }}
-            className="w-full py-3 bg-red-500 text-white rounded-xl font-bold hover:bg-red-600 transition-all shadow-lg shadow-red-500/25 active:scale-95"
+            disabled={loading}
+            className={`w-full flex justify-center items-center py-3 bg-red-500 text-white rounded-xl font-bold hover:bg-red-600 transition-all shadow-lg shadow-red-500/25 active:scale-95 ${loading ? "opacity-70" : ""}`}
           >
-            Eliminar permanentemente
+            {loading ? (
+              <Loader2 className="animate-spin" />
+            ) : (
+              "Eliminar permanentemente"
+            )}
           </button>
           <button
             onClick={(e) => {

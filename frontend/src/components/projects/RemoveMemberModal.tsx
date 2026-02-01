@@ -1,6 +1,7 @@
 "use client";
 
-import { X, UserMinus } from "lucide-react";
+import { X, UserMinus, Loader2 } from "lucide-react";
+import { useState } from "react";
 import { useUsers } from "@/contexts/UsersContext";
 
 interface RemoveMemberModalProps {
@@ -17,6 +18,7 @@ export function RemoveMemberModal({
   memberIds,
 }: RemoveMemberModalProps) {
   const { getUserById } = useUsers();
+  const [removingId, setRemovingId] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
@@ -59,15 +61,28 @@ export function RemoveMemberModal({
                     <p className="text-xs text-gray-500">{u.email}</p>
                   </div>
                   <button
+                    disabled={!!removingId}
                     onClick={async () => {
-                      const success = await onRemoveMember(id);
-                      // Si después de borrar no quedan más, cerramos el modal
-                      if (success && memberIds.length <= 1) onClose();
+                      setRemovingId(id);
+                      try {
+                        const success = await onRemoveMember(id);
+                        if (success && memberIds.length <= 1) onClose();
+                      } finally {
+                        setRemovingId(null);
+                      }
                     }}
-                    className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    className={`p-2 rounded-lg transition-colors ${
+                      removingId
+                        ? "text-gray-400 bg-gray-100 cursor-not-allowed"
+                        : "text-red-400 hover:text-red-600 hover:bg-red-50"
+                    }`}
                     title="Eliminar del proyecto"
                   >
-                    <UserMinus className="size-5" />
+                    {removingId === id ? (
+                      <Loader2 className="size-5 animate-spin" />
+                    ) : (
+                      <UserMinus className="size-5" />
+                    )}
                   </button>
                 </li>
               );

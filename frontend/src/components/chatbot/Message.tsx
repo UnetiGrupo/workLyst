@@ -1,23 +1,23 @@
 interface MessageProps {
   message: string;
-  user?: "user" | "agent";
+  user?: "customer" | "agent";
 }
 
-export function Message({ message, user = "user" }: MessageProps) {
+export function Message({ message, user = "customer" }: MessageProps) {
   return (
     <div
-      className={`flex justify-between items-start gap-2 ${user === "user" ? "justify-end" : "justify-start"}`}
+      className={`flex justify-between items-start gap-2 ${user === "customer" ? "justify-end" : "justify-start"}`}
     >
       <span
         className={`flex items-center justify-center text-sm font-medium text-white bg-blue-400 rounded-lg size-8 ${
-          user === "user" ? "bg-blue-400 order-1" : "bg-zinc-700 order-0"
+          user === "customer" ? "bg-blue-400 order-1" : "bg-zinc-700 order-0"
         }`}
       >
-        {user === "user" ? "Tu" : "WL"}
+        {user === "customer" ? "Tu" : "WL"}
       </span>
       <article
         className={`flex items-center gap-2 text-white p-4 rounded-xl max-w-[75%] ${
-          user === "user"
+          user === "customer"
             ? "bg-blue-400 rounded-tr-xs"
             : "bg-zinc-700 rounded-tl-xs"
         }`}

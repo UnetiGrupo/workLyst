@@ -12,23 +12,21 @@ import { useProjects } from "@/contexts/ProjectsContext";
 //Constants
 import { PROJECT_STATES } from "@/lib/constants";
 // Icons
-import { Plus } from "lucide-react";
+import { Plus, Loader2 } from "lucide-react";
 import { ProjectCard } from "@/components/projects/ProjectCard";
 import { CreateProjectModal } from "@/components/projects/CreateProjectModal";
 
 export default function ProjectsPage() {
   const [showModal, setShowModal] = useState(false);
 
-  const { fetchProjects, projects, createProject } = useProjects();
+  const { fetchProjects, projects, createProject, states } = useProjects();
   const { user, mounted } = useAuth();
-  const { fetchAllUsers } = useUsers();
 
   useEffect(() => {
     if (mounted && user) {
       fetchProjects();
-      fetchAllUsers();
     }
-  }, [mounted, user, fetchAllUsers, fetchProjects]);
+  }, [mounted, user, fetchProjects]);
 
   const welcomeMessage = useMemo(() => {
     if (!user?.nombre) return "Usuario";
@@ -61,27 +59,44 @@ export default function ProjectsPage() {
           </button>
         </div>
       </header>
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-        {PROJECT_STATES.map((state) => {
-          // Calcular valor dinamicamente
-          const value =
-            state.id === "total"
-              ? projects.length
-              : projects.filter((p) => p.estado === state.id).length;
 
-          return <ProjectStateCard key={state.id} {...state} value={value} />;
-        })}
-      </div>
-      <ul className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 min-h-72">
-        {projects.map((project, index) => (
-          <li key={project?.id || `project-${index}`} className="col-span-2">
-            <ProjectCard {...project} />
-          </li>
-        ))}
-        <li className="col-span-2">
-          <CreateProjectCard onClick={handleShowModal} />
-        </li>
-      </ul>
+      {states.loading && projects.length === 0 ? (
+        <div className="flex h-64 w-full items-center justify-center">
+          <div className="flex flex-col items-center gap-4">
+            <Loader2 className="h-12 w-12 animate-spin text-blue-500" />
+            <p className="text-gray-500 font-medium">Cargando proyectos...</p>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+            {PROJECT_STATES.map((state) => {
+              // Calcular valor dinamicamente
+              const value =
+                state.id === "total"
+                  ? projects.length
+                  : projects.filter((p) => p.estado === state.id).length;
+
+              return (
+                <ProjectStateCard key={state.id} {...state} value={value} />
+              );
+            })}
+          </div>
+          <ul className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 min-h-72">
+            {projects.map((project, index) => (
+              <li
+                key={project?.id || `project-${index}`}
+                className="col-span-2"
+              >
+                <ProjectCard {...project} />
+              </li>
+            ))}
+            <li className="col-span-2">
+              <CreateProjectCard onClick={handleShowModal} />
+            </li>
+          </ul>
+        </>
+      )}
 
       {/* Modal para crear el Proyecto */}
       <CreateProjectModal

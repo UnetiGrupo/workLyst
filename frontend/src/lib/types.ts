@@ -46,7 +46,12 @@ export interface Project {
   estado?: "active" | "completed" | "overdue";
   creadoEn?: string;
   actualizadoEn?: string;
-  miembros?: string[] | undefined;
+  miembros?: {
+    id: string;
+    nombre: string;
+    email: string;
+    rol: string;
+  }[];
   creadorId?: string;
 }
 
@@ -55,7 +60,7 @@ export interface Task {
   titulo: string;
   descripcion: string;
   estado: "pending" | "in-progress" | "completed";
-  asignadoA?: string;
+  asignado_a?: string;
   fechaLimite?: string;
   creadoEn?: string;
 }

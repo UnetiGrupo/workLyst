@@ -4,6 +4,7 @@ export interface ProjectInputProps {
   placeholder?: string;
   defaultValue?: string;
   icon?: React.ComponentType<{ className?: string }>;
+  required?: boolean;
   type?: string;
 }
 
@@ -13,6 +14,7 @@ export function ProjectInput({
   placeholder,
   defaultValue,
   icon: Icon,
+  required = false,
   type = "text",
 }: ProjectInputProps) {
   const isDescription = name === "descripcion";
@@ -42,6 +44,7 @@ export function ProjectInput({
             id={name}
             placeholder={placeholder}
             defaultValue={defaultValue}
+            required={required}
           />
         </div>
       )}

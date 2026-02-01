@@ -13,24 +13,35 @@ import {
   UserPlus,
 } from "lucide-react";
 // Components
-import { MemberAvatar } from "@/components/common/MemberAvatar";
+import { MemberAvatarSmart } from "@/components/common/MemberAvatarSmart";
 import { Dropdown, DropdownItem } from "@/components/common/Dropdown";
+import { ConfirmDeletion } from "@/components/common/ConfirmDeletion";
 // Constants
 import { colors, tagColors } from "@/lib/constants";
 // Contexts
 import { useTasks } from "@/contexts/TasksContext";
-import { ConfirmDeletion } from "../common/ConfirmDeletion";
+import { AddTaskModal } from "./AddTaskModal";
 
 export function TaskCard(task: Task) {
   const [showDropdown, setShowDropdown] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
 
-  const { titulo, descripcion, estado, asignadoA, fechaLimite } = task;
+  const { titulo, descripcion, estado, asignado_a, fechaLimite } = task;
 
   const { deleteTask, updateTask } = useTasks();
 
   // --- FUNCIONES DE ACCION ---
+
+  // == MOVER ==
+
+  const handleMove = async () => {
+    const estados: Task["estado"][] = ["pending", "in-progress", "completed"];
+    const currentIndex = estados.indexOf(estado);
+    const nextIndex = (currentIndex + 1) % estados.length;
+    await updateTask(task.id!, { estado: estados[nextIndex] });
+    setShowDropdown(false);
+  };
 
   // == EDITAR ==
 
@@ -38,15 +49,6 @@ export function TaskCard(task: Task) {
     setShowEditModal(true);
     setShowDropdown(false);
   };
-
-  const handleEditSubmit = async (taskData: Task) => {
-    return await updateTask(task.id!, taskData);
-  };
-
-  // == ASIGNAR ==
-
-  // == MOVER ==
-
   // == ELIMINAR ==
 
   const handleDelete = () => {
@@ -69,10 +71,12 @@ export function TaskCard(task: Task) {
     {
       label: "Asignar a",
       icon: UserPlus,
+      onClick: handleEdit,
     },
     {
       label: "Mover Tarea",
       icon: ArrowRightLeft,
+      onClick: handleMove,
     },
     {
       label: "Eliminar Tarea",
@@ -119,17 +123,25 @@ export function TaskCard(task: Task) {
         <footer className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <h4 className="text-xs text-gray-600">Asignado a:</h4>
-            <MemberAvatar
-              name={asignadoA || "Sin Asignar"}
-              rounded="lg"
-              size="sm"
-            />
+            {asignado_a ? (
+              <MemberAvatarSmart userId={asignado_a} />
+            ) : (
+              <span className="text-xs text-gray-400">Sin asignar</span>
+            )}
           </div>
           <span className="text-xs text-gray-600">
             Fecha límite: {fechaLimite}
           </span>
         </footer>
       </article>
+
+      {/* MODAL DE EDICION */}
+      <AddTaskModal
+        showModal={showEditModal}
+        closeModal={() => setShowEditModal(false)}
+        projectId={""}
+        taskToEdit={task}
+      />
 
       {/* MODAL DE ELIMINACION */}
       {showDeleteModal && (

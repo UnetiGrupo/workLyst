@@ -10,7 +10,7 @@ interface UsersContextType {
   loading: boolean;
   searchUsers: (query: string) => Promise<void>;
   fetchAllUsers: () => Promise<void>;
-  getUserById: (id: string) => User | undefined;
+  fetchUserById: (id: string) => Promise<User | null>;
 }
 
 const UsersContext = createContext<UsersContextType | null>(null);
@@ -19,17 +19,20 @@ export function UsersProvider({ children }: { children: React.ReactNode }) {
   const [usersMap, setUsersMap] = useState<Record<string, User>>({});
   const [loading, setLoading] = useState(false);
 
-  const { mounted } = useAuth();
+  const { mounted, token } = useAuth();
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
+  const APP_API_KEY = process.env.NEXT_PUBLIC_APP_API_KEY;
 
   // Helper para el Token
   const getHeaders = useCallback(
     () => ({
       headers: {
-        Authorization: `Bearer ${localStorage.getItem("tokenAcceso")}`,
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+        "x-api-key": APP_API_KEY,
       },
     }),
-    [],
+    [APP_API_KEY, token],
   );
 
   // Función para guardar usuarios en el mapa sin borrar los que ya están
@@ -45,10 +48,10 @@ export function UsersProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  // 1. Buscar por nombre/email
+  // -- BUSCAR POR NOMBRE O EMAIL --
   const searchUsers = useCallback(
     async (query: string) => {
-      if (!query || !mounted) return;
+      if (!query || !mounted || !token) return;
       setLoading(true);
       try {
         const res = await axios.get(
@@ -57,34 +60,55 @@ export function UsersProvider({ children }: { children: React.ReactNode }) {
         );
         saveToCache(res.data);
       } catch (err) {
-        console.error("Error buscando usuarios");
+        console.error("Error buscando usuarios:", err);
       } finally {
         setLoading(false);
       }
     },
-    [API_URL, mounted, getHeaders, saveToCache],
+    [API_URL, mounted, APP_API_KEY, getHeaders, saveToCache],
   );
 
-  // 2. Traer todos (útil para administradores o selectores)
+  // -- TRAER TODOS LOS USUARIOS --
   const fetchAllUsers = useCallback(async () => {
-    if (!mounted) return;
+    if (!mounted || !token) return;
     setLoading(true);
     try {
       const res = await axios.get(`${API_URL}/api/users`, getHeaders());
       saveToCache(res.data);
-    } catch (err) {
-      console.error("Error al traer todos los usuarios");
+    } catch (err: any) {
+      console.error(
+        "Error al traer todos los usuarios",
+        err.response?.data?.mensaje,
+      );
     } finally {
       setLoading(false);
     }
-  }, [API_URL, mounted, getHeaders, saveToCache]);
+  }, [API_URL, mounted, APP_API_KEY, getHeaders, saveToCache]);
 
-  // 3. Obtener uno del mapa (Síncrono)
-  const getUserById = (id: string) => usersMap[id];
+  // -- TRAER UN USUARIO POR ID --
+  const fetchUserById = useCallback(
+    async (id: string) => {
+      // Si ya está en el mapa, no hacemos nada
+      if (usersMap[id]) return usersMap[id];
+
+      try {
+        const res = await axios.get(`${API_URL}/api/users/${id}`, getHeaders());
+        const userData = res.data;
+
+        // Guardamos en el mapa (caché)
+        setUsersMap((prev) => ({ ...prev, [id]: userData }));
+        return userData;
+      } catch (err) {
+        console.error(`Error al obtener usuario ${id}:`, err);
+        return null;
+      }
+    },
+    [usersMap, API_URL, getHeaders],
+  );
 
   return (
     <UsersContext.Provider
-      value={{ usersMap, loading, searchUsers, fetchAllUsers, getUserById }}
+      value={{ usersMap, loading, searchUsers, fetchAllUsers, fetchUserById }}
     >
       {children}
     </UsersContext.Provider>

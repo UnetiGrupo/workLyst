@@ -1,7 +1,7 @@
 type AvatarSize = "sm" | "md" | "lg" | "xl";
 
 interface MemberAvatarProps {
-  name: string;
+  name: string | null | undefined;
   size?: AvatarSize;
   color?: string;
   rounded?: "full" | "lg";
@@ -84,13 +84,13 @@ export function MemberAvatar({
 
   return (
     <div
-      title={name}
+      title={name || ""}
       className={`${sizes[size].size} flex items-center justify-center ${roundedClass} border-2 border-white bg-linear-to-br ${bgGradient} shadow-sm hover:scale-110 hover:z-20 transition-all duration-300 cursor-pointershrink-0 ring-1 ring-gray-100/50 ${className}`}
     >
       <span
         className={`${sizes[size as AvatarSize].fontSize} text-white font-black tracking-tighter`}
       >
-        {getInitials(name)}
+        {getInitials(name || "")}
       </span>
     </div>
   );
