@@ -26,16 +26,6 @@ export function AddTaskModal({
   const contentRef = useRef<HTMLDivElement>(null);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const { createTask, updateTask } = useTasks();
-  const { usersMap } = useUsers();
-
-  // Si estamos editando, cargar el usuario asignado inicialmente
-  useEffect(() => {
-    if (taskToEdit?.asignado_a) {
-      setSelectedUser(usersMap[taskToEdit.asignado_a] || null);
-    } else {
-      setSelectedUser(null);
-    }
-  }, [taskToEdit, usersMap, showModal]);
 
   useProjectModalAnimation(showModal, overlayRef, contentRef);
 

@@ -3,21 +3,21 @@
 import { X, UserMinus, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useUsers } from "@/contexts/UsersContext";
+import type { ProjectMember } from "@/lib/types";
 
 interface RemoveMemberModalProps {
   isOpen: boolean;
   onClose: () => void;
   onRemoveMember: (userId: string) => Promise<boolean>;
-  memberIds: string[];
+  members: ProjectMember[];
 }
 
 export function RemoveMemberModal({
   isOpen,
   onClose,
   onRemoveMember,
-  memberIds,
+  members,
 }: RemoveMemberModalProps) {
-  const { getUserById } = useUsers();
   const [removingId, setRemovingId] = useState<string | null>(null);
 
   if (!isOpen) return null;
@@ -40,33 +40,30 @@ export function RemoveMemberModal({
         </header>
 
         <ul className="flex flex-col gap-2 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
-          {memberIds.length === 0 ? (
+          {members.length === 0 ? (
             <p className="text-center py-4 text-gray-500 text-sm">
               No hay miembros para eliminar.
             </p>
           ) : (
-            memberIds.map((id) => {
-              const u = getUserById(id);
-              if (!u) return null;
-
+            members.map((member) => {
               return (
                 <li
-                  key={id}
+                  key={member.id}
                   className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100"
                 >
                   <div className="flex flex-col">
                     <p className="font-semibold text-gray-800 text-sm">
-                      {u.nombre || u.usuario}
+                      {member.nombre}
                     </p>
-                    <p className="text-xs text-gray-500">{u.email}</p>
+                    <p className="text-xs text-gray-500">{member.email}</p>
                   </div>
                   <button
                     disabled={!!removingId}
                     onClick={async () => {
-                      setRemovingId(id);
+                      setRemovingId(member.id);
                       try {
-                        const success = await onRemoveMember(id);
-                        if (success && memberIds.length <= 1) onClose();
+                        const success = await onRemoveMember(member.id);
+                        if (success && members.length <= 1) onClose();
                       } finally {
                         setRemovingId(null);
                       }
@@ -78,7 +75,7 @@ export function RemoveMemberModal({
                     }`}
                     title="Eliminar del proyecto"
                   >
-                    {removingId === id ? (
+                    {removingId === member.id ? (
                       <Loader2 className="size-5 animate-spin" />
                     ) : (
                       <UserMinus className="size-5" />

@@ -1,4 +1,4 @@
-type AvatarSize = "sm" | "md" | "lg" | "xl";
+type AvatarSize = "sm" | "md" | "lg" | "xl" | "2xl";
 
 interface MemberAvatarProps {
   name: string | null | undefined;
@@ -77,6 +77,10 @@ export function MemberAvatar({
     xl: {
       size: "size-14",
       fontSize: "text-xl",
+    },
+    "2xl": {
+      size: "size-18",
+      fontSize: "text-2xl",
     },
   };
 

@@ -40,6 +40,14 @@ export interface ProjectState {
   aditionalInfo?: string;
 }
 
+export interface ProjectMember {
+  id: string;
+  nombre?: string;
+  email?: string;
+  rol?: string;
+  fechaUnion?: string;
+}
+
 export interface Project {
   id?: string;
   nombre: string;
@@ -47,12 +55,7 @@ export interface Project {
   estado?: "active" | "completed" | "overdue";
   creadoEn?: string;
   actualizadoEn?: string;
-  miembros?: {
-    id: string;
-    nombre?: string;
-    email?: string;
-    rol?: string;
-  }[];
+  miembros?: ProjectMember[];
   creadorId?: string;
 }
 

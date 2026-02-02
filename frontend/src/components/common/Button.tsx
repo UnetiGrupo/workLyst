@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-type ButtonStyle = "primary" | "secondary";
+type ButtonStyle = "primary" | "secondary" | "logout";
 type ButtonType = "button" | "submit" | "reset";
 
 interface ButtonProps {
@@ -35,6 +35,8 @@ export function Button({
       "bg-blue-500 shadow-lg shadow-blue-500/20 hover:bg-blue-600 hover:shadow-blue-500/50 text-white",
     secondary:
       "bg-gray-200 shadow-lg shadow-gray-500/20 hover:bg-gray-300 text-gray-700 hover:bg-gray-600 hover:shadow-gray-500/50 hover:text-white",
+    logout:
+      "bg-red-500 shadow-lg shadow-red-500/20 hover:bg-red-600 hover:shadow-red-500/50 text-white",
   };
 
   const combinedClassName = `${baseStyles} ${styles[style]}`;

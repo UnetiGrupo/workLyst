@@ -13,7 +13,6 @@ import {
   UserPlus,
 } from "lucide-react";
 // Components
-import { MemberAvatarSmart } from "@/components/common/MemberAvatarSmart";
 import { Dropdown, DropdownItem } from "@/components/common/Dropdown";
 import { ConfirmDeletion } from "@/components/common/ConfirmDeletion";
 // Constants
@@ -21,6 +20,7 @@ import { colors, tagColors } from "@/lib/constants";
 // Contexts
 import { useTasks } from "@/contexts/TasksContext";
 import { AddTaskModal } from "./AddTaskModal";
+import { MemberAvatar } from "@/components/common/MemberAvatar";
 
 export function TaskCard(task: Task) {
   const [showDropdown, setShowDropdown] = useState(false);
@@ -124,7 +124,7 @@ export function TaskCard(task: Task) {
           <div className="flex items-center gap-2">
             <h4 className="text-xs text-gray-600">Asignado a:</h4>
             {asignado_a ? (
-              <MemberAvatarSmart userId={asignado_a} size="sm" rounded="lg" />
+              <MemberAvatar name={asignado_a} size="sm" rounded="lg" />
             ) : (
               <span className="text-xs text-gray-400">Sin asignar</span>
             )}

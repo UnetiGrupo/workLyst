@@ -6,9 +6,8 @@ import { AddMemberModal } from "./AddMemberModal";
 import { CreateProjectModal } from "./CreateProjectModal";
 import { RemoveMemberModal } from "./RemoveMemberModal";
 import { ConfirmDeletion } from "@/components/common/ConfirmDeletion";
-import { MemberAvatarSmart } from "@/components/common/MemberAvatarSmart";
 // Hooks
-import { useState, useEffect } from "react";
+import { useState } from "react";
 // Icons
 import {
   Ellipsis,
@@ -24,6 +23,7 @@ import type { Project, User } from "@/lib/types";
 // Contexts
 import { useProjects } from "@/contexts/ProjectsContext";
 import { useUsers } from "@/contexts/UsersContext";
+import { MemberAvatar } from "../common/MemberAvatar";
 
 export function ProjectCard(project: Project) {
   const {
@@ -44,31 +44,6 @@ export function ProjectCard(project: Project) {
 
   const { updateProject, deleteProject, addMember, removeMember } =
     useProjects();
-
-  const { usersMap, fetchUserById } = useUsers();
-
-  // 1. Sincronizar con el caché de usuarios
-  useEffect(() => {
-    if (miembros.length > 0) {
-      miembros.forEach((m) => {
-        // Usamos m.id porque m es un objeto según lo que descubrimos
-        if (m.id && !usersMap[m.id]) {
-          fetchUserById(m.id);
-        }
-      });
-    }
-  }, [miembros, usersMap, fetchUserById]);
-
-  // 2. Lógica de visualización corregida
-  const MAX_VISIBLES = 3;
-
-  // Ordenar: Creador primero. Usamos m.id para comparar.
-  const miembrosOrdenados = [...miembros].sort((a, b) =>
-    a.id === creadorId ? -1 : b.id === creadorId ? 1 : 0,
-  );
-
-  const miembrosAMostrar = miembrosOrdenados.slice(0, MAX_VISIBLES);
-  const extraCount = miembros.length - MAX_VISIBLES;
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return "No disponible";
@@ -172,7 +147,7 @@ export function ProjectCard(project: Project) {
     setShowDropdown(!showDropdown);
   };
 
-  console.log(`Proyecto ${nombre}:`, miembros);
+  console.log(miembros);
 
   return (
     <>
@@ -196,24 +171,7 @@ export function ProjectCard(project: Project) {
               <Dropdown
                 isOpen={showDropdown}
                 onClose={() => setShowDropdown(false)}
-                items={[
-                  {
-                    label: "Editar",
-                    icon: Pencil,
-                    onClick: () => setShowEditModal(true),
-                  },
-                  {
-                    label: "Miembros",
-                    icon: UserPlus,
-                    onClick: () => setShowAddMemberModal(true),
-                  },
-                  {
-                    label: "Eliminar",
-                    icon: Trash2,
-                    variant: "danger",
-                    onClick: () => setShowDeleteModal(true),
-                  },
-                ]}
+                items={items}
               />
             </div>
           </header>
@@ -228,32 +186,13 @@ export function ProjectCard(project: Project) {
 
           <footer className="flex items-center justify-between pt-4 border-t border-gray-50">
             <ul className="flex items-center">
-              {miembrosAMostrar.map((m, index) => (
-                <li
-                  key={m.id}
-                  className="-ml-3 first:ml-0 relative"
-                  style={{ zIndex: 10 - index }}
-                >
-                  <div className="relative group">
-                    <MemberAvatarSmart userId={m.id} />
-                    {m.id === creadorId && (
-                      <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500 border-2 border-white"></span>
-                      </span>
-                    )}
-                    {/* Tooltip simple con el nombre */}
-                    <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block bg-gray-800 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap z-50">
-                      {m.nombre}
-                    </span>
-                  </div>
-                </li>
-              ))}
-              {extraCount > 0 && (
-                <li className="-ml-3 flex items-center justify-center size-8 rounded-full bg-gray-100 border-2 border-white text-[10px] font-bold text-gray-500 z-0">
-                  +{extraCount}
-                </li>
-              )}
+              {miembros
+                .sort((a, b) => (a.rol === "owner" ? -1 : 1))
+                .map((miembro) => (
+                  <li className="-ml-2 relative" key={miembro.id}>
+                    <MemberAvatar name={miembro?.nombre} />
+                  </li>
+                ))}
             </ul>
 
             <div className="text-right">
@@ -291,14 +230,6 @@ export function ProjectCard(project: Project) {
           isOpen={showAddMemberModal}
           onClose={() => setShowAddMemberModal(false)}
           onAddMember={handleAddMemberSubmit}
-          currentMembers={
-            miembros.map((m: any) => ({
-              id: m.id,
-              nombre: m.nombre,
-              email: m.email,
-              rol: m.rol,
-            })) as User[]
-          }
         />
       )}
 
@@ -308,11 +239,7 @@ export function ProjectCard(project: Project) {
           isOpen={showRemoveMemberModal}
           onClose={() => setShowRemoveMemberModal(false)}
           onRemoveMember={handleRemoveMemberSubmit}
-          memberIds={
-            (project.miembros || []).map((m) =>
-              typeof m === "string" ? m : m.id,
-            ) as string[]
-          }
+          members={project.miembros || []}
         />
       )}
     </>

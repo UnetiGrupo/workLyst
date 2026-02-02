@@ -9,6 +9,7 @@ import {
   Handshake,
   Home,
   LayoutDashboard,
+  Settings,
   Timer,
   Users,
 } from "lucide-react";
@@ -33,6 +34,11 @@ export const NAVBAR_ITEMS: NavbarItem[] = [
     label: "Dashboard",
     href: "/dashboard",
     icon: LayoutDashboard,
+  },
+  {
+    label: "Configuración",
+    href: "/user",
+    icon: Settings,
   },
 ];
 

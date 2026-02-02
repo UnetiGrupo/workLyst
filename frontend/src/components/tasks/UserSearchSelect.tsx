@@ -20,7 +20,7 @@ export function UserSearchSelect({
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isLocalLoading, setIsLocalLoading] = useState(false);
 
-  const { usersMap, fetchUserById } = useUsers();
+  const { userSearch, fetchUserById } = useUsers();
   const { selectedProject } = useProjects();
 
   // --- EL FIX CRÍTICO: Cargar los miembros si no están en el mapa ---
@@ -32,7 +32,7 @@ export function UserSearchSelect({
       const promises = selectedProject.miembros.map((m: any) => {
         const id = typeof m === "string" ? m : m.id;
         // Solo llamamos a la API si el usuario NO está ya en el mapa
-        if (!usersMap[id]) return fetchUserById(id);
+        if (!userSearch[id]) return fetchUserById(id);
         return null;
       });
 
@@ -47,11 +47,11 @@ export function UserSearchSelect({
     const cleanSearch = searchTerm.toLowerCase().trim();
     if (!selectedProject?.miembros) return [];
 
-    // Mapeamos los IDs a objetos reales usando el usersMap actualizado
+    // Mapeamos los IDs a objetos reales usando el userSearch actualizado
     const projectMembers = selectedProject.miembros
       .map((m: any) => {
         const id = typeof m === "string" ? m : m.id;
-        return usersMap[id];
+        return userSearch[id];
       })
       .filter(Boolean) as User[];
 
@@ -64,7 +64,7 @@ export function UserSearchSelect({
 
       return matchesSearch && selectedUser?.id !== user.id;
     });
-  }, [usersMap, searchTerm, selectedProject, selectedUser]);
+  }, [userSearch, searchTerm, selectedProject, selectedUser]);
 
   return (
     <div className="relative flex flex-col gap-2">

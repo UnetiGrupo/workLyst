@@ -72,14 +72,33 @@ export function ProjectsProvider({ children }: { children: React.ReactNode }) {
         `${API_URL}/api/projects`,
         getAuthHeaders(),
       );
-      setProjects(response.data);
+
+      const proyectosBasicos = response.data;
+      setProjects(proyectosBasicos); // Mostramos los proyectos rápido aunque no tengan miembros todavía
+
+      // Opcional: Cargar los miembros en segundo plano para cada proyecto
+      const proyectosCompletos = await Promise.all(
+        proyectosBasicos.map(async (p: Project) => {
+          try {
+            const detail = await axios.get(
+              `${API_URL}/api/projects/${p.id}`,
+              getAuthHeaders(),
+            );
+            return detail.data;
+          } catch {
+            return p; // Si falla uno, devolvemos el básico
+          }
+        }),
+      );
+
+      setProjects(proyectosCompletos); // Actualizamos la lista con los miembros incluidos
       setStates((prev) => ({ ...prev, loading: false, success: true }));
     } catch (error: any) {
       const msg = error.response?.data?.mensaje || "Error al cargar proyectos";
       addToast(msg, "error");
       setStates({ loading: false, error: msg, success: false });
     }
-  }, [mounted, user, API_URL, APP_API_KEY, getAuthHeaders, addToast]);
+  }, [mounted, user, API_URL, getAuthHeaders, startAction, addToast]);
 
   const getProjectById = useCallback(
     async (id: string) => {

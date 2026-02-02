@@ -1,7 +1,7 @@
 "use client";
 
 // Hooks
-import { useRef, useState, useEffect, useMemo } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useProjectModalAnimation } from "@/hooks/useProjectModalAnimation";
 import { useDebounce } from "@/hooks/useDebounce";
 // Context
@@ -37,41 +37,35 @@ export function CreateProjectModal({
   // -- LOGICA PARA MIEMBROS --
   const [selectedMembers, setSelectedMembers] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const debouncedSearch = useDebounce(searchTerm, 400);
-  const { searchUsers, usersMap, loading } = useUsers();
+  const { searchUsers, userSearch, loading } = useUsers();
+
+  const debouncedSearchTerm = useDebounce(searchTerm, 400);
 
   // ANIMACION
   useProjectModalAnimation(showModal, overlayRef, contentRef);
 
-  // BUSCAR USUARIO (Solo si hay 3 o más letras)
   useEffect(() => {
-    if (debouncedSearch.trim().length >= 3) {
-      searchUsers(debouncedSearch);
+    const query = debouncedSearchTerm.trim();
+
+    if (query.length >= 3) {
+      searchUsers(query);
+    } else {
+      // Si el usuario borra el texto, reseteamos la lista para que no se quede pegada
+      searchUsers("");
     }
-  }, [debouncedSearch, searchUsers]);
+  }, [debouncedSearchTerm, searchUsers]);
 
-  // FILTRAR RESULTADOS:
-  // 1. Que el término de búsqueda coincida con el nombre/email
-  // 2. Que no esté ya seleccionado
-  const searchResults = useMemo(() => {
-    const cleanSearch = searchTerm.toLowerCase().trim();
-    if (cleanSearch.length < 3) return [];
+  // MANEJO DE CAMBIO
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  };
 
-    return Object.values(usersMap).filter((u) => {
-      const matchesSearch =
-        u.nombre?.toLowerCase().includes(cleanSearch) ||
-        u.usuario?.toLowerCase().includes(cleanSearch) ||
-        u.email?.toLowerCase().includes(cleanSearch);
+  // ACCIONES
 
-      const isNotSelected = !selectedMembers.some((m) => m.id === u.id);
-
-      return matchesSearch && isNotSelected;
-    });
-  }, [usersMap, searchTerm, selectedMembers]);
-
+  // 2. Limpiar el estado al añadir un miembro
   const addMember = (user: User) => {
     setSelectedMembers((prev) => [...prev, user]);
-    setSearchTerm("");
+    setSearchTerm(""); // Esto disparará el debounce a "" y detendrá el efecto
   };
 
   const removeMember = (userId: string) => {
@@ -171,45 +165,61 @@ export function CreateProjectModal({
               <div className="relative">
                 <div className="relative">
                   <Search
-                    className={`absolute left-3 top-1/2 -translate-y-1/2 size-4 ${loading ? "text-blue-500 animate-pulse" : "text-gray-400"}`}
+                    className={`absolute left-3 top-1/2 -translate-y-1/2 size-4 transition-colors ${
+                      loading ? "text-blue-500 animate-spin" : "text-gray-400"
+                    }`}
                   />
                   <input
                     type="text"
                     value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onChange={handleInputChange}
                     placeholder="Buscar por nombre o email..."
                     className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:border-blue-500 transition-all"
                   />
+
+                  {/* Opcional: Mostrar un loader pequeño si está cargando */}
+                  {loading && searchTerm.length >= 3 && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <Loader2 className="size-3 animate-spin text-gray-400" />
+                    </div>
+                  )}
                 </div>
 
                 {/* Dropdown de resultados filtrados */}
-                {searchResults.length > 0 && (
-                  <ul className="absolute z-50 w-full mt-2 bg-white border border-gray-100 rounded-xl shadow-xl max-h-40 overflow-y-auto p-1">
-                    {searchResults.map((user) => (
-                      <li key={user.id}>
-                        <button
-                          type="button"
-                          onClick={() => addMember(user)}
-                          className="w-full flex items-center justify-between p-2 hover:bg-blue-50 rounded-lg transition-colors group"
-                        >
-                          <div className="flex items-center gap-2 text-left">
-                            <MemberAvatar
-                              name={user.nombre || user.usuario}
-                              className="size-6"
-                            />
-                            <div>
-                              <p className="text-xs font-bold">
-                                {user.nombre || user.usuario}
-                              </p>
-                              <p className="text-[10px] text-gray-500">
-                                {user.email}
-                              </p>
-                            </div>
-                          </div>
-                          <UserPlus className="size-4 text-gray-400 group-hover:text-blue-500" />
-                        </button>
-                      </li>
-                    ))}
+                {userSearch.length > 0 && (
+                  <ul className="absolute z-100 w-full mt-2 bg-white border border-gray-100 rounded-xl shadow-xl max-h-40 overflow-y-auto p-1">
+                    {userSearch
+                      .filter(
+                        (user) =>
+                          !selectedMembers.some((m) => m.id === user.id),
+                      )
+                      .map((user) => {
+                        return (
+                          <li key={user.id}>
+                            <button
+                              type="button"
+                              onClick={() => addMember(user)}
+                              className="w-full flex items-center justify-between p-2 hover:bg-blue-50 rounded-lg transition-colors group"
+                            >
+                              <div className="flex items-center gap-2 text-left">
+                                <MemberAvatar
+                                  name={user.nombre || user.usuario}
+                                  className="size-6"
+                                />
+                                <div>
+                                  <p className="text-xs font-bold">
+                                    {user.nombre || user.usuario}
+                                  </p>
+                                  <p className="text-[10px] text-gray-500">
+                                    {user.email}
+                                  </p>
+                                </div>
+                              </div>
+                              <UserPlus className="size-4 text-gray-400 group-hover:text-blue-500" />
+                            </button>
+                          </li>
+                        );
+                      })}
                   </ul>
                 )}
               </div>

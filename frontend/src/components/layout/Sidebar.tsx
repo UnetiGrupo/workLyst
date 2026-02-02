@@ -1,11 +1,12 @@
 "use client";
 
-import { MemberAvatarSmart } from "@/components/common/MemberAvatarSmart";
 import { useAuth } from "@/contexts/AuthContext";
 import { NAVBAR_ITEMS } from "@/lib/constants";
 import { Kanban } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { MemberAvatar } from "@/components/common/MemberAvatar";
+import { Button } from "../common/Button";
 
 export function Sidebar() {
   const { user, logout } = useAuth();
@@ -26,7 +27,7 @@ export function Sidebar() {
           title="Cerrar sesión"
           className="hover:opacity-80 transition-opacity"
         >
-          <MemberAvatarSmart userId={user?.id || ""} rounded="lg" size="sm" />
+          <MemberAvatar name={user?.nombre} rounded="lg" size="sm" />
         </button>
         <div className="flex flex-col gap-px overflow-hidden">
           <h4 className="text-sm font-semibold truncate">{user?.nombre}</h4>
@@ -80,6 +81,11 @@ export function Sidebar() {
           </div>
         )}
       </nav>
+      <footer className="flex-1 flex items-end justify-center">
+        <Button style="logout" onClick={logout}>
+          Cerrar sesión
+        </Button>
+      </footer>
     </aside>
   );
 }
