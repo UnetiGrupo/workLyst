@@ -55,7 +55,25 @@ export const inicializarTablas = async () => {
             )
         `);
 
-        // Tabla de tareas
+        // Tabla de Tareas (Declaración inicial para nuevas instalaciones)
+        // Nota: Para migraciones, ver bloques ALTER abajo
+        await consulta(`
+            CREATE TABLE IF NOT EXISTS task_statuses (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(50) NOT NULL UNIQUE,
+                key VARCHAR(50) NOT NULL UNIQUE,
+                color VARCHAR(7) DEFAULT '#808080',
+                is_system BOOLEAN DEFAULT FALSE
+            )
+        `);
+
+        // Seed de Estatus de Tareas
+        await consulta(`INSERT INTO task_statuses (name, key, color, is_system) VALUES ('Pendiente', 'pending', '#ffc107', true) ON CONFLICT (key) DO NOTHING`);
+        await consulta(`INSERT INTO task_statuses (name, key, color, is_system) VALUES ('En Progreso', 'in_progress', '#17a2b8', false) ON CONFLICT (key) DO NOTHING`);
+        await consulta(`INSERT INTO task_statuses (name, key, color, is_system) VALUES ('Completada', 'completed', '#28a745', true) ON CONFLICT (key) DO NOTHING`);
+        await consulta(`INSERT INTO task_statuses (name, key, color, is_system) VALUES ('Vencida', 'overdue', '#dc3545', true) ON CONFLICT (key) DO NOTHING`);
+
+        // Tabla de Tareas
         await consulta(`
             CREATE TABLE IF NOT EXISTS tasks (
                 id VARCHAR(36) PRIMARY KEY,
@@ -63,7 +81,7 @@ export const inicializarTablas = async () => {
                 assigned_to VARCHAR(36),
                 title VARCHAR(255) NOT NULL,
                 description TEXT,
-                status VARCHAR(20) DEFAULT 'pendiente' CHECK(status IN ('pendiente', 'en_progreso', 'completada', 'vencida')),
+                status_id INTEGER REFERENCES task_statuses(id),
                 due_date TIMESTAMP,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -71,6 +89,30 @@ export const inicializarTablas = async () => {
                 FOREIGN KEY (assigned_to) REFERENCES users(id) ON DELETE SET NULL
             )
         `);
+
+        // Migración: Añadir status_id si no existe y migrar datos
+        try {
+            // Verificar si columna status_id existe
+            await consulta(`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS status_id INTEGER REFERENCES task_statuses(id)`);
+
+            // Migrar datos antiguos (status string -> status_id)
+            // Solo si existen filas con status_id NULL y status con texto
+            const hasOldData = await consulta(`SELECT 1 FROM tasks WHERE status_id IS NULL LIMIT 1`);
+            if (hasOldData.length > 0) {
+                await consulta(`UPDATE tasks SET status_id = (SELECT id FROM task_statuses WHERE key = 'pending') WHERE status = 'pendiente'`);
+                await consulta(`UPDATE tasks SET status_id = (SELECT id FROM task_statuses WHERE key = 'in_progress') WHERE status = 'en_progreso'`);
+                await consulta(`UPDATE tasks SET status_id = (SELECT id FROM task_statuses WHERE key = 'completed') WHERE status = 'completada'`);
+                await consulta(`UPDATE tasks SET status_id = (SELECT id FROM task_statuses WHERE key = 'overdue') WHERE status = 'vencida'`);
+
+                // Default para cualquiera que quede
+                await consulta(`UPDATE tasks SET status_id = (SELECT id FROM task_statuses WHERE key = 'pending') WHERE status_id IS NULL`);
+            }
+
+            // Opcional: Eliminar columna antigua 'status' si ya no se usa, pero por seguridad la dejaremos por ahora o se puede renombrar
+            // await consulta(`ALTER TABLE tasks DROP COLUMN IF EXISTS status`); 
+        } catch (e) {
+            console.log('Nota: Migración de columnas de tareas ya realizada o no necesaria.');
+        }
 
         // Tabla de estatus de grupos
         await consulta(`
@@ -123,16 +165,16 @@ export const inicializarTablas = async () => {
         `);
 
         // Seed de API Keys iniciales
-        // await consulta(`
-        //     INSERT INTO api_keys (name, api_key, status) 
-        //     VALUES ('IA_BOT', '925053021afeec58aac3c36d1a7b8a2a00dfbc57de7ada2e30b7cb7b7fcc9d03', 'active') 
-        //     ON CONFLICT (name) DO NOTHING
-        // `);
-        // await consulta(`
-        //     INSERT INTO api_keys (name, api_key, status) 
-        //     VALUES ('WEB_APP', '2f3051da7622f58f4ba191e2e9dacea002042ab1c7394f8bee67949081bf3436', 'active') 
-        //     ON CONFLICT (name) DO NOTHING
-        // `);
+        await consulta(`
+            INSERT INTO api_keys (name, api_key, status) 
+            VALUES ('IA_BOT', '925053021afeec58aac3c36d1a7b8a2a00dfbc57de7ada2e30b7cb7b7fcc9d03', 'active') 
+            ON CONFLICT (name) DO NOTHING
+        `);
+        await consulta(`
+            INSERT INTO api_keys (name, api_key, status) 
+            VALUES ('WEB_APP', '2f3051da7622f58f4ba191e2e9dacea002042ab1c7394f8bee67949081bf3436', 'active') 
+            ON CONFLICT (name) DO NOTHING
+        `);
 
         // Tabla de Bloqueo de Tokens (Blocklist)
         await consulta(`
@@ -141,6 +183,12 @@ export const inicializarTablas = async () => {
                 token TEXT UNIQUE NOT NULL,
                 expires_at TIMESTAMP NOT NULL
             )
+        `);
+
+        // Limpiar duplicados antes de asegurar el índice único (Fix para error ON CONFLICT)
+        await consulta(`
+            DELETE FROM token_blocklist a USING token_blocklist b 
+            WHERE a.id < b.id AND a.token = b.token
         `);
 
         // Asegurar que el token en token_blocklist sea único (necesario para ON CONFLICT)

@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { crearTarea, obtenerTareasPorProyecto, actualizarTarea, eliminarTarea, obtenerTareaPorId } from '../models/taskModel';
+import { resolverStatusId } from '../models/taskStatusModel';
 import { obtenerMiembrosProyecto } from '../models/projectModel';
 import { AuthRequest } from '../middleware/authMiddleware';
 
@@ -55,7 +56,8 @@ export const crear = async (req: AuthRequest, res: Response): Promise<void> => {
                 proyecto_id: nuevaTarea.project_id,
                 titulo: nuevaTarea.title,
                 descripcion: nuevaTarea.description,
-                estado: nuevaTarea.status,
+                estado: 'Pendiente', // Default
+                id_estado: nuevaTarea.status_id,
                 asignado_a: nuevaTarea.assigned_to,
                 fecha_limite: nuevaTarea.due_date,
                 creado_en: nuevaTarea.created_at
@@ -83,7 +85,9 @@ export const listarPorProyecto = async (req: AuthRequest, res: Response): Promis
             proyecto_id: t.project_id,
             titulo: t.title,
             descripcion: t.description,
-            estado: t.status,
+            estado: t.status_name,
+            id_estado: t.status_id,
+            color_estado: t.status_color,
             asignado_a: t.assigned_to,
             asignado_a_nombre: t.assigned_to_name,
             fecha_limite: t.due_date,
@@ -119,7 +123,8 @@ export const obtenerDetalle = async (req: AuthRequest, res: Response): Promise<v
             proyecto_id: tarea.project_id,
             titulo: tarea.title,
             descripcion: tarea.description,
-            estado: tarea.status,
+            estado: tarea.status_name,
+            id_estado: tarea.status_id,
             asignado_a: tarea.assigned_to,
             fecha_limite: tarea.due_date,
             creado_en: tarea.created_at
@@ -155,7 +160,15 @@ export const actualizar = async (req: AuthRequest, res: Response): Promise<void>
         const datosActualizados: any = {};
         if (titulo) datosActualizados.title = titulo;
         if (descripcion !== undefined) datosActualizados.description = descripcion;
-        if (estado) datosActualizados.status = estado;
+        if (estado) {
+            const statusId = await resolverStatusId(estado);
+            if (statusId) {
+                datosActualizados.status_id = statusId;
+            } else {
+                res.status(400).json({ mensaje: 'Estatus no válido' });
+                return;
+            }
+        }
         if (asignado_a !== undefined) datosActualizados.assigned_to = asignado_a;
         if (fecha_limite !== undefined) datosActualizados.due_date = fecha_limite;
 
@@ -173,7 +186,8 @@ export const actualizar = async (req: AuthRequest, res: Response): Promise<void>
                 proyecto_id: tareaActualizada.project_id,
                 titulo: tareaActualizada.title,
                 descripcion: tareaActualizada.description,
-                estado: tareaActualizada.status,
+                estado: tareaActualizada.status_name,
+                id_estado: tareaActualizada.status_id,
                 asignado_a: tareaActualizada.assigned_to,
                 fecha_limite: tareaActualizada.due_date,
                 creado_en: tareaActualizada.created_at
@@ -249,7 +263,8 @@ export const asignar = async (req: AuthRequest, res: Response): Promise<void> =>
                 proyecto_id: tareaActualizada.project_id,
                 titulo: tareaActualizada.title,
                 descripcion: tareaActualizada.description,
-                estado: tareaActualizada.status,
+                estado: tareaActualizada.status_name,
+                id_estado: tareaActualizada.status_id,
                 asignado_a: tareaActualizada.assigned_to,
                 fecha_limite: tareaActualizada.due_date,
                 creado_en: tareaActualizada.created_at
