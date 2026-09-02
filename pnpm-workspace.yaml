@@ -2,3 +2,8 @@ packages:
   - "backend"
   - "frontend"
   - "frontend_old"
+allowBuilds:
+  '@scarf/scarf': true
+  sharp: true
+  sqlite3: true
+  unrs-resolver: true
