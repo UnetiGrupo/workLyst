@@ -8,12 +8,12 @@ Proyecto de gestión integral para el Trayecto 2 de la UNETI. Este repositorio c
 
 ### 💻 Frontend
 
-Desarrollado con **Next.js** y **TypeScript**, ofreciendo una experiencia de usuario fluida y reactiva.
+Desarrollado con **TanStack Start** y **TypeScript**, ofreciendo una experiencia de usuario fluida y reactiva.
 
-- **Framework:** Next.js (App Router).
-- **Estilos:** Tailwind CSS con un diseño premium y responsive.
-- **Estado:** Context API para la gestión de tareas y usuarios.
-- **Iconografía:** Lucide React.
+- **Framework:** TanStack Start
+- **Estilos:** Tailwind CSS v4
+- **Lenguaje:** TypeScript
+- **Runtime:** Nitro
 
 ### ⚙️ Backend
 
