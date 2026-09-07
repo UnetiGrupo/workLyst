@@ -61,3 +61,24 @@ body {
   font-family: var(--font-display);
 }
 
+@layer base {
+  html {
+    /* Pantallas escaladas o laptops (Viewport efectivo de 1280px a 1535px) */
+    font-size: 100%; /* 16px base */
+  }
+
+  /* Monitores de escritorio a 1080p sin escalado (100% SO) / 2K o mayores */
+  @media (min-width: 1536px) {
+    html {
+      /* Sube la escala base para compensar la falta de zoom del sistema */
+      font-size: 112.5%; /* 1rem pasa a ser 18px */
+    }
+  }
+
+  /* Monitores grandes o resoluciones de 1920px sin ningún escalado */
+  @media (min-width: 1800px) {
+    html {
+      font-size: 120%; /* 1rem pasa a ser 19.2px */
+    }
+  }
+}
