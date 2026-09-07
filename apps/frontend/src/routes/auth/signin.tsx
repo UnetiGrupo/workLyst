@@ -40,19 +40,19 @@ function RouteComponent() {
           <AuthFooter />
         </div>
       </AuthBackground>
-      <section className="flex flex-col items-center justify-center flex-1 w-full h-full px-5 sm:px-8 md:px-12 overflow-y-auto">
-        <div className="flex flex-col items-center gap-5 sm:gap-6 w-full max-w-lg py-6 sm:py-8">
-          <header className="flex flex-col items-center gap-3 text-center">
+      <section className="flex flex-col items-center justify-center flex-1 w-full h-full px-4 md:px-8 2xl:px-12 overflow-y-auto">
+        <div className="flex flex-col items-center gap-5 md:gap-4 2xl:gap-6 w-full max-w-lg py-6 md:py-3 2xl:py-8">
+          <header className="flex flex-col items-center gap-3 md:gap-2 2xl:gap-3 text-center">
             <img
               src="/images/logo.svg"
               alt="Logo de Worklyst"
               className="xl:hidden w-10 h-10"
             />
             <div className="flex flex-col gap-1">
-              <h2 className="text-2xl sm:text-3xl font-black">
+              <h2 className="text-xl md:text-2xl 2xl:text-3xl font-black">
                 Bienvenido de nuevo
               </h2>
-              <p className="text-xs sm:text-sm text-worklyst-text-sub">
+              <p className="text-xs md:text-sm 2xl:text-base text-worklyst-text-sub">
                 Ingresa tus credenciales para acceder a tu espacio de trabajo.
               </p>
             </div>

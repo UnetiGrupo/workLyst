@@ -27,7 +27,7 @@ export function Input({
       <div className="relative">
         <input
           id={inputId}
-          className={`w-full px-3 py-2.5 rounded-lg border border-worklyst-border bg-white text-worklyst-text text-sm placeholder:text-worklyst-text-sub focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all ${
+          className={`w-full px-3 py-3 md:py-2 rounded-lg border border-worklyst-border bg-white text-worklyst-text text-sm placeholder:text-worklyst-text-sub focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all ${
             icon ? "pr-10" : ""
           } ${error ? "border-red-500 focus:ring-red-500" : ""} ${className}`}
           {...props}

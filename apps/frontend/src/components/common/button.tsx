@@ -12,7 +12,7 @@ type ButtonProps = {
 };
 
 const BASE_CLASSES =
-  "inline-flex items-center justify-center gap-2 px-6 py-2 rounded-lg font-medium hover:-translate-y-1 active:scale-95 transition-all duration-300 cursor-pointer text-sm";
+  "inline-flex items-center justify-center gap-2 px-5 py-2.5 md:px-5 md:py-1.5 rounded-lg font-medium hover:-translate-y-1 active:scale-95 transition-all duration-300 cursor-pointer text-sm";
 
 const VARIANT_CLASSES = {
   primary: "bg-primary-500 text-white hover:bg-primary-600",
