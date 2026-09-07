@@ -41,13 +41,20 @@ function RouteComponent() {
 					<AuthFooter />
 				</div>
 			</AuthBackground>
-			<section className="flex flex-col items-center justify-center flex-1 w-full h-full px-12 overflow-y-auto">
-				<div className="flex flex-col items-center gap-6 w-full max-w-lg py-8">
-					<header className="flex flex-col gap-1 text-center">
-						<h2 className="text-3xl font-black">Crear tu cuenta</h2>
-						<p className="text-sm text-worklyst-text-sub">
-							Únete a más de 10,000 equipos que gestionan con Worklyst.
-						</p>
+			<section className="flex flex-col items-center justify-center flex-1 w-full h-full px-5 sm:px-8 md:px-12 overflow-y-auto">
+				<div className="flex flex-col items-center gap-5 sm:gap-6 w-full max-w-lg py-6 sm:py-8">
+					<header className="flex flex-col items-center gap-3 text-center">
+						<img
+							src="/images/logo.svg"
+							alt="Logo de Worklyst"
+							className="xl:hidden w-10 h-10"
+						/>
+						<div className="flex flex-col gap-1">
+							<h2 className="text-2xl sm:text-3xl font-black">Crear tu cuenta</h2>
+							<p className="text-xs sm:text-sm text-worklyst-text-sub">
+								Únete a más de 10,000 equipos que gestionan con Worklyst.
+							</p>
+						</div>
 					</header>
 
 					<div className="flex gap-3 w-full">

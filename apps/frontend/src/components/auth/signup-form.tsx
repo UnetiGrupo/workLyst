@@ -76,14 +76,14 @@ export function SignupForm() {
 	});
 
 	return (
-		<div className="flex flex-col gap-6 w-full max-w-lg">
+		<div className="flex flex-col gap-5 sm:gap-6 w-full max-w-lg">
 			<form
 				onSubmit={(e) => {
 					e.preventDefault();
 					e.stopPropagation();
 					form.handleSubmit();
 				}}
-				className="flex flex-col gap-5"
+				className="flex flex-col gap-4 sm:gap-5"
 			>
 				{FORM_FIELDS.map((field) => (
 					<form.Field
@@ -149,7 +149,7 @@ export function SignupForm() {
 									error={fieldApi.state.meta.errors[0]}
 								/>
 
-								<div className="bg-worklyst-tiza-bg rounded-lg p-4">
+								<div className="bg-worklyst-tiza-bg rounded-lg p-3 sm:p-4">
 									<div className="flex items-center justify-between mb-2">
 										<span className="text-xs font-medium text-worklyst-text">
 											Nivel de seguridad:
@@ -159,7 +159,7 @@ export function SignupForm() {
 										</span>
 									</div>
 
-									<div className="flex gap-1 mb-4">
+									<div className="flex gap-1 mb-2 sm:mb-4">
 										{SECURITY_LEVELS.map((level, index) => (
 											<div
 												key={level.label}
@@ -172,7 +172,11 @@ export function SignupForm() {
 										))}
 									</div>
 
-									<div className="grid grid-cols-2 gap-2">
+									<p className="sm:hidden text-xs text-worklyst-text-sub">
+										Mín. 8 caracteres · A-z · 0-9 · !@#$
+									</p>
+
+									<div className="hidden sm:grid grid-cols-2 gap-2">
 										{PASSWORD_RULES.map((rule) => {
 											const isValid = rule.test(fieldApi.state.value);
 											return (

@@ -35,14 +35,14 @@ export function SigninForm() {
 	});
 
 	return (
-		<div className="flex flex-col gap-6 w-full max-w-lg">
+		<div className="flex flex-col gap-5 sm:gap-6 w-full max-w-lg">
 			<form
 				onSubmit={(e) => {
 					e.preventDefault();
 					e.stopPropagation();
 					form.handleSubmit();
 				}}
-				className="flex flex-col gap-5"
+				className="flex flex-col gap-4 sm:gap-5"
 			>
 				{FORM_FIELDS.map((field) => (
 					<form.Field
@@ -89,12 +89,16 @@ export function SigninForm() {
 				))}
 
 				<div className="flex items-center justify-between">
-					<label className="flex items-center gap-2 cursor-pointer">
-						<input
-							type="checkbox"
-							className="size-4 rounded border-worklyst-border text-primary-500 focus:ring-primary-500"
-						/>
-						<span className="text-sm text-worklyst-text-sub">
+					<label className="flex items-center gap-2.5 cursor-pointer group">
+						<div className="relative">
+							<input
+								type="checkbox"
+								className="peer sr-only"
+							/>
+							<div className="h-5 w-9 rounded-full bg-worklyst-border/50 transition-colors duration-200 peer-checked:bg-primary-500 peer-focus-visible:ring-2 peer-focus-visible:ring-primary-500/40 peer-focus-visible:ring-offset-2" />
+							<div className="absolute left-0.5 top-0.5 size-4 rounded-full bg-white shadow-sm transition-all duration-200 peer-checked:translate-x-4 peer-checked:bg-white" />
+						</div>
+						<span className="text-sm text-worklyst-text-sub transition-colors duration-200 group-hover:text-worklyst-text">
 							Recuérdame
 						</span>
 					</label>
