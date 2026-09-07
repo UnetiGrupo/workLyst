@@ -1,13 +1,12 @@
 {
-  "name": "backend",
+  "name": "@worklyst/backend",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
     "start": "node dist/index.js",
-    "dev": "nodemon --exec ts-node src/index.ts",
-    "build": "tsc",
-    "lint": "echo \"No linter configured\""
+    "dev": "nodemon --exec \"ts-node -r tsconfig-paths/register src/index.ts\"",
+    "build": "tsc"
   },
   "keywords": [],
   "author": "",
@@ -41,7 +40,8 @@
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.8",
     "@types/uuid": "^10.0.0",
-    "nodemon": "^3.1.11"
+    "nodemon": "^3.1.11",
+    "tsconfig-paths": "^4.2.0"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

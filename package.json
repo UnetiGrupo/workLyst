@@ -2,12 +2,10 @@
   "name": "worklyst-monorepo",
   "private": true,
   "scripts": {
-    "dev": "pnpm --parallel -r run dev",
-    "build": "pnpm --parallel -r run build",
-    "lint": "pnpm --parallel -r run lint",
-    "backend": "pnpm --filter backend run dev",
-    "frontend": "pnpm --filter frontend run dev",
-    "frontend:old": "pnpm --filter worklyst-frontend run dev"
+    "dev:ui": "pnpm --filter @worklyst/frontend dev",
+    "dev:api": "pnpm --filter @worklyst/backend dev",
+    "build:ui": "pnpm --filter @worklyst/frontend build",
+    "build:api": "pnpm --filter @worklyst/backend build"
   },
   "devEngines": {
     "packageManager": {
@@ -16,8 +14,5 @@
       "onFail": "download"
     }
   },
-  "type": "module",
-  "dependencies": {
-    "lucide-react": "^0.563.0"
-  }
+  "type": "module"
 }

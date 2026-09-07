@@ -1,7 +1,5 @@
 packages:
-  - "backend"
-  - "frontend"
-  - "frontend_old"
+  - "apps/*"
 allowBuilds:
   '@scarf/scarf': true
   sharp: true

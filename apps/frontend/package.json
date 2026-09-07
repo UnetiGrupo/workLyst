@@ -1,5 +1,5 @@
 {
-  "name": "frontend",
+  "name": "@worklyst/frontend",
   "private": true,
   "type": "module",
   "imports": {
