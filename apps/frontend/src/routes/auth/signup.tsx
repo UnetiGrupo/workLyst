@@ -50,7 +50,9 @@ function RouteComponent() {
 							className="xl:hidden w-10 h-10"
 						/>
 						<div className="flex flex-col gap-1">
-							<h2 className="text-xl md:text-2xl 2xl:text-3xl font-black">Crear tu cuenta</h2>
+							<h2 className="text-xl md:text-2xl 2xl:text-3xl font-black">
+								Crear tu cuenta
+							</h2>
 							<p className="text-xs md:text-sm 2xl:text-base text-worklyst-text-sub">
 								Únete a más de 10,000 equipos que gestionan con Worklyst.
 							</p>
