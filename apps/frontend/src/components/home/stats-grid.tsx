@@ -14,7 +14,7 @@ interface StatsGridProps {
 
 export function StatsGrid({ stats }: StatsGridProps) {
   return (
-    <section className="my-4 grid grid-cols-2 gap-3">
+    <section className="my-4 grid grid-cols-2 md:grid-cols-4 gap-3">
       {stats.map((stat) => {
         const IconComponent =
           iconMap[stat.iconName as keyof typeof iconMap] || Folder;

@@ -12,12 +12,12 @@ export function UpcomingTasks({ tasks }: UpcomingTasksProps) {
         <h3 className="text-lg font-bold text-worklyst-text">
           Tareas Próximas
         </h3>
-        <button className="text-sm font-semibold text-primary-600 active:opacity-70">
+        <button type="button" className="text-sm font-semibold text-primary-600 active:opacity-70">
           Ver Todas
         </button>
       </div>
 
-      <div className="space-y-2.5">
+      <div className="space-y-2.5 lg:grid lg:grid-cols-2 lg:gap-3 lg:space-y-0">
         {tasks.map((task) => {
           const isUrgent = task.priority === "URGENTE";
 

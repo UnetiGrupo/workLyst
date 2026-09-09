@@ -33,7 +33,7 @@ export function Sidebar() {
   };
 
   return (
-    <aside className="hidden md:flex flex-col h-dvh w-64 border-r border-worklyst-border bg-worklyst-surface select-none">
+    <aside className="hidden md:flex flex-col h-dvh w-64 shrink-0 border-r border-worklyst-border bg-worklyst-surface select-none">
       <header className="flex items-center gap-3 px-5 py-5">
         <img
           className="w-8 h-8"

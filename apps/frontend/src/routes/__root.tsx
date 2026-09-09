@@ -44,7 +44,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 			<head>
 				<HeadContent />
 			</head>
-			<body>
+			<body className="flex h-dvh">
 				{showLayout && <Sidebar />}
 				<AnimatePresence mode="wait">
 					<motion.main
@@ -53,7 +53,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 						animate={{ opacity: 1, y: 0 }}
 						exit={{ opacity: 0, y: -8 }}
 						transition={{ duration: 0.2, ease: "easeOut" }}
-						className="flex-1"
+						className="flex-1 overflow-y-auto"
 					>
 						{children}
 					</motion.main>

@@ -10,7 +10,7 @@ export const Route = createFileRoute("/")({ component: Home });
 
 function Home() {
   return (
-    <div className="mx-auto min-h-screen max-w-md bg-worklyst-tiza-bg px-4 pb-20 pt-2 font-display text-worklyst-text">
+    <div className="mx-auto min-h-screen w-full max-w-7xl px-4 pb-20 pt-2 md:px-8 2xl:px-12 font-display text-worklyst-text">
       <Header />
       <main>
         <Greeting userName="Pedro" criticalTasksCount={4} />

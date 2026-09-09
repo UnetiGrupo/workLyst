@@ -20,7 +20,7 @@ export function CurrentProjects({ projects }: CurrentProjectsProps) {
       <h3 className="text-worklyst-text text-lg font-bold mb-4 font-display">
         Proyectos Actuales
       </h3>
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-3 lg:grid lg:grid-cols-2 xl:grid-cols-3">
         {projects.map((project, index) => {
           return (
             <article
