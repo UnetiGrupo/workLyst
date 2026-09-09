@@ -1,10 +1,27 @@
-<!-- intent-skills:start -->
-## Skill Loading
+# AGENTS.md — Worklyst Frontend
 
-Before editing files for a substantial task:
-- Run `pnpm dlx @tanstack/intent@latest list` from the workspace root to see available local skills.
-- If a listed skill matches the task, run `pnpm dlx @tanstack/intent@latest load <package>#<skill>` before changing files.
-- Use the loaded `SKILL.md` guidance while making the change.
-- Monorepos: when working across packages, run the skill check from the workspace root and prefer the local skill for the package being changed.
-- Multiple matches: prefer the most specific local skill for the package or concern you are changing; load additional skills only when the task spans multiple packages or concerns.
-<!-- intent-skills:end -->
+## Proyecto
+
+- Worklyst es un sistema de Gestión de Proyectos y tareas potenciado con IA.
+- Esta parte es especificamente la interfaz construida con Tanstack Start React, TailwindCss, TypeScript y pnpm
+
+## Comandos
+
+- Ejecutar: `pnpm dev`
+- Lint/formato: `pnpm lint`
+
+## Estilo y convenciones
+
+- El código debe estar escrito en Ingles.
+- Los comentarios en español
+- Los Componentes deben crearse con kebab-case y nombrarse con PascalCase
+- Las funciones deben nombrarse con camelCase
+- Debe haber un tipado estricto y correcto con TypeScript
+
+## Reglas
+
+- Lee docs/constitution.md y docs/specs/001-worklyst-mvp/spec.md antes de tocar código.
+
+## Al terminar cualquier tarea
+
+- Verifica el codigo, formatea, revisa buenas practicas y ejecuta los tests si hay.
