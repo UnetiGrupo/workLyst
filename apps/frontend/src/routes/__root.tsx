@@ -8,6 +8,7 @@ import {
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { AnimatePresence, motion } from "motion/react";
 import { BottomNav } from "#/components/layout/bottom-nav";
+import { Header } from "#/components/layout/header";
 import { Sidebar } from "#/components/layout/sidebar";
 import appCss from "../styles.css?url";
 
@@ -26,6 +27,11 @@ export const Route = createRootRoute({
 			},
 		],
 		links: [
+			{
+				rel: "icon",
+				type: "image/svg+xml",
+				href: "/images/logo.svg",
+			},
 			{
 				rel: "stylesheet",
 				href: appCss,
@@ -46,18 +52,21 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 			</head>
 			<body className="flex h-dvh">
 				{showLayout && <Sidebar />}
-				<AnimatePresence mode="wait">
-					<motion.main
-						key={location.pathname}
-						initial={{ opacity: 0, y: 8 }}
-						animate={{ opacity: 1, y: 0 }}
-						exit={{ opacity: 0, y: -8 }}
-						transition={{ duration: 0.2, ease: "easeOut" }}
-						className="flex-1 overflow-y-auto"
-					>
-						{children}
-					</motion.main>
-				</AnimatePresence>
+				<div className="flex flex-1 flex-col overflow-y-auto">
+					{showLayout && <Header />}
+					<AnimatePresence mode="wait">
+						<motion.main
+							key={location.pathname}
+							initial={{ opacity: 0, y: 8 }}
+							animate={{ opacity: 1, y: 0 }}
+							exit={{ opacity: 0, y: -8 }}
+							transition={{ duration: 0.2, ease: "easeOut" }}
+							className="flex-1"
+						>
+							{children}
+						</motion.main>
+					</AnimatePresence>
+				</div>
 				{showLayout && <BottomNav />}
 				<TanStackDevtools
 					config={{
