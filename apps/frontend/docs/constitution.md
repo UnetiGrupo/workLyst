@@ -1,12 +1,16 @@
-# CONSTITUCIÓN — Worklyst Frontend
+# CONSTITUCIÓN — Worklyst
 
-1. Stack: TanStack Start + React 19 + Tailwind v4 + TypeScript + pnpm. Sin agregar dependencias sin aprobación.
-2. Specs: Cada módulo tiene su spec en docs/specs/. Código solo se escribe después de que la spec esté aprobada.
-3. Separación: Lógica de negocio en hooks/services, UI en componentes. Nunca mezclar fetch con render.
-4. Tests: Mínimo 1 test por componente público. E2E para flujos críticos (auth, crear tarea).
-5. Persistencia: Estado del servidor se maneja vía API REST. El frontend NO persiste datos en localStorage salvo tokens JWT.
-6. Idioma: Código y variables en inglés. Comentarios, specs y mensajes de UI en español.
-7. Módulos: Auth, Proyectos, Plantillas (Scrum/Kanban), Tareas, Grupos, Mensajes, IA.
-8. Backend: Comunica vía REST + API Key (`x-api-key`) + JWT Bearer. No direct access a DB desde frontend.
-9. IA: Integración vía endpoints del backend (n8n/Groq). El frontend solo consume, no maneja prompts directamente.
-10. Convenciones: Componentes kebab-case/PascalCase, funciones camelCase, tipado estricto TypeScript.
+1. Stack simple: TanStack Start + React 19 + Tailwind v4 + TypeScript + pnpm.
+   Ninguna dependencia nueva sin aprobación explícita.
+2. La spec manda: cada módulo tiene spec en docs/specs/. Si algo no está en la
+   spec, no se implementa. Un cambio de requisitos se aplica primero en la spec,
+   luego en plan/tasks y por último en el código.
+3. Separación estricta: lógica de negocio en hooks y servicios puros; la UI solo
+   renderiza. Nunca mezclar fetch, estado o cálculo con el render.
+4. Tests obligatorios: 1 test mínimo por componente público y por función pura de
+   lógica; E2E para los flujos críticos. Sin tests no se da una tarea por hecha.
+5. Protección de datos: la API solo habla REST con API Key + JWT. Cero datos de
+   usuario en localStorage salvo el token de sesión. Estado del servidor vía
+   cliente de datos, nunca en cachés locales persistentes.
+6. Idioma: código, nombres y textos en inglés; comentarios, specs y UI en
+   español. Convenciones de AGENTS.md siempre vigentes.
