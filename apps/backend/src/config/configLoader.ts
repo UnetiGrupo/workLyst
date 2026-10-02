@@ -2,6 +2,17 @@ import * as fs from 'fs';
 import * as yaml from 'js-yaml';
 import * as path from 'path';
 
+// Carga el archivo .env (si existe) con la API nativa de Node (>= 20.12).
+// No requiere dotenv y no sobrescribe variables ya definidas en el sistema.
+const rutaEnv = path.resolve(__dirname, '../../.env');
+if (fs.existsSync(rutaEnv)) {
+    if (typeof process.loadEnvFile === 'function') {
+        process.loadEnvFile(rutaEnv);
+    } else {
+        console.warn('process.loadEnvFile no disponible (Node < 20.12): se ignora .env');
+    }
+}
+
 interface Configuracion {
     server: {
         port: number;
