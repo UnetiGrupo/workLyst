@@ -1,30 +1,35 @@
-# Backend API - Worklist
+# Backend API - WorkLyst
+
+API REST para la gestión de proyectos, tareas y grupos, con autenticación por **JWT** y **API Key** global.
 
 ## 📋 Descripción
 
-API REST desarrollada con **TypeScript**, **Express** y **SQLite** que implementa un sistema completo de autenticación con **Refresh Tokens** para mayor seguridad y mejor experiencia de usuario.
+Backend desarrollado con **TypeScript**, **Express** y **PostgreSQL (Supabase)**. Expone endpoints de autenticación, usuarios, roles, proyectos, tareas y grupos, y genera documentación interactiva con **Swagger**.
 
-## 🚀 Características
+## ✨ Características
 
-- ✅ Autenticación con JWT (Access Token + Refresh Token)
-- ✅ Registro y login de usuarios
-- ✅ Tokens de corta duración (15 minutos) para mayor seguridad
-- ✅ Refresh tokens de larga duración (7 días) almacenados en base de datos
-- ✅ Cierre de sesión con invalidación de tokens
-- ✅ Configuración centralizada con `bootstrap.yml`
-- ✅ Base de datos SQLite
+- ✅ Autenticación con JWT (`sessionToken`)
+- ✅ API Key global (`x-api-key`) para todas las rutas `/api`
+- ✅ Registro y login de usuarios con contraseñas hasheadas (bcrypt)
+- ✅ Logout con invalidación de token (blocklist en base de datos)
+- ✅ Rate limiting global y específico para autenticación
+- ✅ Gestión de usuarios, roles, proyectos, tareas y grupos
+- ✅ PostgreSQL (Supabase) con creación automática de tablas al iniciar
+- ✅ Documentación Swagger en `/api-docs`
 - ✅ Código completamente en español
+
+> ⚠️ Aunque existe una clase `SQLiteConnection`, los scripts de inicialización (`src/config/database/init.ts`) usan SQL específico de PostgreSQL (`SERIAL`, `ON CONFLICT`, `ALTER TABLE ... IF NOT EXISTS`, placeholders `$1`). En la práctica **se requiere PostgreSQL**.
 
 ## 🛠️ Tecnologías
 
-- **Node.js** - Entorno de ejecución
-- **TypeScript** - Lenguaje de programación
-- **Express** - Framework web
-- **SQLite** (better-sqlite3) - Base de datos
-- **JWT** (jsonwebtoken) - Autenticación
-- **bcryptjs** - Encriptación de contraseñas
-- **js-yaml** - Manejo de configuración YAML
-- **CORS** - Habilitación de peticiones cross-origin
+- **Node.js** + **TypeScript**
+- **Express 5**
+- **PostgreSQL** vía `pg` (compatible con Supabase)
+- **jsonwebtoken** — sesiones
+- **bcryptjs** — hash de contraseñas
+- **express-rate-limit** — rate limiting
+- **swagger-jsdoc** + **swagger-ui-express** — documentación
+- **js-yaml** — carga de `bootstrap.yml`
 
 ## 📁 Estructura del Proyecto
 
@@ -32,271 +37,253 @@ API REST desarrollada con **TypeScript**, **Express** y **SQLite** que implement
 backend/
 ├── src/
 │   ├── config/
-│   │   ├── configLoader.ts    # Carga de configuración desde bootstrap.yml
-│   │   └── db.ts               # Configuración de la base de datos
-│   ├── controllers/
-│   │   └── authController.ts   # Lógica de autenticación
-│   ├── models/
-│   │   └── userModel.ts        # Modelo de usuarios y tokens
-│   ├── routes/
-│   │   └── authRoutes.ts       # Rutas de autenticación
-│   └── index.ts                # Punto de entrada de la aplicación
-├── data/
-│   └── database.sqlite         # Base de datos SQLite
-├── bootstrap.yml               # Archivo de configuración
+│   │   ├── configLoader.ts        # Carga bootstrap.yml + variables de entorno
+│   │   ├── db.ts                  # Selección y conexión de la base de datos
+│   │   ├── swagger.ts             # Definición de Swagger
+│   │   └── database/
+│   │       ├── init.ts            # Creación de tablas y seeds
+│   │       ├── PostgreSQLConnection.ts
+│   │       └── SQLiteConnection.ts
+│   ├── controllers/               # Lógica de negocio
+│   ├── middleware/
+│   │   ├── authMiddleware.ts      # Verificación de JWT / token de sistema
+│   │   ├── apiKeyMiddleware.ts    # Verificación de x-api-key
+│   │   └── rateLimiter.ts
+│   ├── models/                    # Acceso a datos
+│   ├── routes/                    # Definición de endpoints
+│   └── index.ts                   # Punto de entrada
+├── bootstrap.yml                  # Configuración/secretos (ignorado por git)
+├── .env                           # Variables de entorno (ignorado por git)
 ├── package.json
-├── tsconfig.json
-└── README.md
+└── tsconfig.json
 ```
 
 ## ⚙️ Configuración
 
-### bootstrap.yml
+La configuración se resuelve con esta prioridad (lo de arriba gana):
 
-El archivo `bootstrap.yml` contiene toda la configuración de la aplicación
+1. Variables de entorno del sistema
+2. Archivo `.env` (`apps/backend/.env`)
+3. Archivo `bootstrap.yml` (`apps/backend/bootstrap.yml`)
+4. Valores por defecto del código
 
-> ⚠️ **Importante**: Cambia los secrets en producción por valores seguros.
+El archivo `.env` se carga automáticamente mediante `process.loadEnvFile` (nativo en Node ≥ 20.12), por lo que **no se necesita dotenv**.
 
-## 📦 Instalación
+### `bootstrap.yml` — conexión y secretos
 
-1. **Clonar el repositorio** (o navegar al directorio del backend)
+```yaml
+server:
+  port: 3000
 
-2. **Instalar dependencias**:
-```bash
-npm install
+database:
+  type: postgres
+  connectionString: "postgresql://postgres:TU_PASSWORD@db.TU_REF.supabase.co:5432/postgres"
+
+jwt:
+  accessTokenSecret: "un_secreto_largo_y_aleatorio"
+  refreshTokenSecret: "otro_secreto_distinto"
+  accessTokenExpiry: "15m"
+  refreshTokenExpiry: "7d"
+
+cors:
+  enabled: true
+  origin: "*"
 ```
 
-3. **Configurar bootstrap.yml** (opcional):
-   - Edita `bootstrap.yml` para personalizar puerto, rutas, secrets, etc.
+### `.env` — variables de entorno
 
-4. **Iniciar en modo desarrollo**:
+| Variable | Descripción | Por defecto |
+|---|---|---|
+| `PORT` | Puerto del servidor | `3000` |
+| `DB_TYPE` | `postgres` o `sqlite` | `postgres` |
+| `DATABASE_URL` | Connection string (alternativa a `bootstrap.yml`) | — |
+| `DB_HOST` / `DB_PORT` / `DB_NAME` / `DB_USER` / `DB_PASSWORD` | Parámetros individuales (alternativa a `DATABASE_URL`) | — |
+| `DB_FILENAME` | Archivo SQLite (solo si `DB_TYPE=sqlite`) | `database.sqlite` |
+| `DB_SSL` | `true` para Supabase. **Obligatorio para Supabase** | — |
+| `JWT_ACCESS_SECRET` | Secreto del access token | — |
+| `JWT_REFRESH_SECRET` | Secreto del refresh token (reservado) | — |
+| `JWT_ACCESS_EXPIRY` | Duración del access token | — |
+| `JWT_REFRESH_EXPIRY` | Duración del refresh token (reservado) | — |
+| `CORS_ENABLED` | Activar CORS | `true` |
+| `CORS_ORIGIN` | Origen permitido | `*` |
+| `RATE_LIMIT_WINDOW_MS` | Ventana de rate limiting (ms) | `900000` |
+| `RATE_LIMIT_MAX` | Máximo de peticiones por ventana | `100` |
+| `RATE_LIMIT_AUTH_MAX` | Máximo en rutas de auth | `5` |
+| `SYSTEM_API_TOKEN` | Token que autentica como el bot del sistema | — |
+| `RENDER_EXTERNAL_URL` | URL externa para Swagger en producción | — |
+
+> `DB_SSL` **no** puede definirse en `bootstrap.yml`: el código solo lo lee de `process.env`, por eso va en `.env`.
+
+## 📦 Instalación y ejecución
+
+Este repositorio es un monorepo gestionado con **pnpm**.
+
 ```bash
-npm run dev
+# 1. Instalar dependencias (desde la raíz)
+pnpm install
+
+# 2. Crear la configuración local
+#    - apps/backend/bootstrap.yml  (conexión y secretos)
+#    - apps/backend/.env           (variables de entorno, DB_SSL=true)
+
+# 3. Arrancar solo el backend en modo desarrollo
+pnpm dev:api
 ```
 
-5. **Compilar para producción**:
-```bash
-npm run build
-npm start
-```
+### Scripts
+
+**Raíz del monorepo:**
+
+| Script | Acción |
+|---|---|
+| `pnpm dev:api` | Arranca el backend en desarrollo (hot-reload) |
+| `pnpm dev:ui` | Arranca el frontend en desarrollo |
+| `pnpm build:api` | Compila el backend |
+| `pnpm build:ui` | Compila el frontend |
+
+**Dentro de `apps/backend`:** `dev` (nodemon + ts-node), `build` (tsc), `start` (node dist).
 
 ## 🗄️ Base de Datos
 
-### Tabla: users
+Las tablas se crean y se siembran automáticamente al iniciar el servidor (`src/config/database/init.ts`):
 
-| Campo      | Tipo     | Descripción                    |
-|------------|----------|--------------------------------|
-| id         | TEXT     | UUID único del usuario         |
-| name       | TEXT     | Nombre del usuario             |
-| email      | TEXT     | Email único del usuario        |
-| password   | TEXT     | Contraseña hasheada (bcrypt)   |
-| created_at | DATETIME | Fecha de creación              |
+| Tabla | Descripción |
+|---|---|
+| `users` | Usuarios (`id`, `name`, `email`, `password`) |
+| `roles` | Roles (`owner`, `member`) |
+| `projects` | Proyectos |
+| `project_members` | Miembros y rol dentro de un proyecto |
+| `tasks` | Tareas de un proyecto |
+| `task_statuses` | Estatus de tareas (`pending`, `in_progress`, `completed`, `overdue`) |
+| `groups` | Grupos |
+| `group_members` | Miembros de un grupo |
+| `group_statuses` | Estatus de grupos (`activo`, `eliminado`) |
+| `api_keys` | API Keys válidas |
+| `token_blocklist` | Tokens invalidados en el logout |
 
-### Tabla: refresh_tokens
+También se crea un usuario de sistema: `ia_bot@system.local`.
 
-| Campo      | Tipo     | Descripción                        |
-|------------|----------|------------------------------------|
-| id         | TEXT     | UUID único del token               |
-| user_id    | TEXT     | ID del usuario (FK)                |
-| token      | TEXT     | Refresh token JWT                  |
-| expires_at | DATETIME | Fecha de expiración                |
-| created_at | DATETIME | Fecha de creación                  |
+## 🔐 Autenticación
+
+Todas las rutas bajo `/api` requieren el header:
+
+```
+x-api-key: <API_KEY>
+```
+
+Al inicializar la base de datos se siembran dos API Keys:
+
+| Nombre | Valor |
+|---|---|
+| `WEB_APP` | `2f3051da7622f58f4ba191e2e9dacea002042ab1c7394f8bee67949081bf3436` |
+| `IA_BOT` | `925053021afeec58aac3c36d1a7b8a2a00dfbc57de7ada2e30b7cb7b7fcc9d03` |
+
+Las rutas protegidas requieren además:
+
+```
+Authorization: Bearer <sessionToken>
+```
+
+Si `SYSTEM_API_TOKEN` está definido y se envía como Bearer, se autentica como el usuario bot del sistema.
 
 ## 🔌 API Endpoints
 
-### Base URL
-```
-http://localhost:30200
-```
+**Base URL:** `http://localhost:3000`
 
-### 1. Registrar Usuario
+### Autenticación (`/api/auth`)
 
-**Endpoint**: `POST /api/auth/register`
+Solo requieren `x-api-key`. `register` y `login` tienen rate limiting adicional.
 
-**Body**:
+| Método | Ruta | Descripción |
+|---|---|---|
+| POST | `/api/auth/register` | Registrar usuario |
+| POST | `/api/auth/login` | Iniciar sesión |
+| POST | `/api/auth/logout` | Cerrar sesión (invalida el `sessionToken`) |
+
+**Registrar** — `POST /api/auth/register`
+
 ```json
-{
-  "nombre": "Juan Pérez",
-  "email": "juan@example.com",
-  "password": "miPassword123"
-}
+{ "usuario": "Juan Pérez", "email": "juan@example.com", "password": "miPassword123" }
 ```
 
-**Respuesta exitosa** (201):
+Respuesta `201`:
+
 ```json
 {
   "mensaje": "Usuario registrado exitosamente",
-  "usuario": {
-    "id": "uuid-generado",
-    "nombre": "Juan Pérez",
-    "email": "juan@example.com"
-  }
+  "usuario": { "id": "uuid", "nombre": "Juan Pérez", "email": "juan@example.com" }
 }
 ```
 
-**Errores**:
-- `400`: Todos los campos son obligatorios
-- `400`: El usuario ya existe
+**Login** — `POST /api/auth/login`
 
----
-
-### 2. Iniciar Sesión
-
-**Endpoint**: `POST /api/auth/login`
-
-**Body**:
 ```json
-{
-  "email": "juan@example.com",
-  "password": "miPassword123"
-}
+{ "email": "juan@example.com", "password": "miPassword123" }
 ```
 
-**Respuesta exitosa** (200):
+Respuesta `200`:
+
 ```json
 {
   "mensaje": "Login exitoso",
-  "tokenAcceso": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "tokenActualizacion": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "usuario": {
-    "id": "uuid-del-usuario",
-    "nombre": "Juan Pérez",
-    "email": "juan@example.com"
-  }
+  "sessionToken": "eyJhbGciOiJIUzI1NiIs...",
+  "usuario": { "id": "uuid", "nombre": "Juan Pérez", "email": "juan@example.com" }
 }
 ```
 
-**Errores**:
-- `400`: Email y contraseña son obligatorios
-- `401`: Credenciales inválidas
+**Logout** — `POST /api/auth/logout`
 
----
-
-### 3. Renovar Access Token
-
-**Endpoint**: `POST /api/auth/refresh`
-
-**Body**:
 ```json
-{
-  "tokenActualizacion": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-}
+{ "sessionToken": "eyJhbGciOiJIUzI1NiIs..." }
 ```
 
-**Respuesta exitosa** (200):
-```json
-{
-  "mensaje": "Token renovado exitosamente",
-  "tokenAcceso": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-}
+### Resto de recursos
+
+Requieren `x-api-key` y, salvo `/api/roles`, `Authorization: Bearer <sessionToken>`.
+
+| Recurso | Rutas |
+|---|---|
+| `/api/users` | `GET /`, `GET /:id`, `PUT /:id` |
+| `/api/roles` | `GET /` |
+| `/api/projects` | `POST /`, `GET /`, `GET /:id`, `PUT /:id`, `PATCH /:id/finish`, `DELETE /:id` |
+| `/api/projects` (miembros y tareas) | `POST /:id/members`, `DELETE /:id/members/:userId`, `POST /:projectId/tasks`, `GET /:projectId/tasks` |
+| `/api/tasks` | `GET /:id`, `PUT /:id`, `DELETE /:id`, `PATCH /:id/assign` |
+| `/api/groups` | `POST /`, `GET /`, `GET /:id`, `PUT /:id`, `DELETE /:id`, `POST /:id/members`, `DELETE /:id/members/:userId` |
+| `/api/task-statuses` | `GET /`, `POST /`, `PUT /:id`, `DELETE /:id` |
+
+### Endpoint de prueba
+
+`GET /prueba` → `¡Hola Mundo! Backend con TypeScript y SQLite funcionando`
+
+## 📚 Documentación Swagger
+
+Disponible en `http://localhost:3000/api-docs`. Los esquemas se generan a partir de los comentarios `@swagger` en `src/routes/*.ts`.
+
+## 🚀 Despliegue (Render)
+
+Variables de entorno mínimas:
+
+```
+DB_TYPE=postgres
+DATABASE_URL=postgresql://...
+DB_SSL=true
+JWT_ACCESS_SECRET=...
+JWT_REFRESH_SECRET=...
+JWT_ACCESS_EXPIRY=15m
+JWT_REFRESH_EXPIRY=7d
 ```
 
-**Errores**:
-- `400`: Refresh token es obligatorio
-- `401`: Refresh token inválido o expirado
-
----
-
-### 4. Cerrar Sesión
-
-**Endpoint**: `POST /api/auth/logout`
-
-**Body**:
-```json
-{
-  "tokenActualizacion": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-}
-```
-
-**Respuesta exitosa** (200):
-```json
-{
-  "mensaje": "Logout exitoso"
-}
-```
-
-**Errores**:
-- `400`: Refresh token es obligatorio
-
----
-
-### 5. Endpoint de Prueba
-
-**Endpoint**: `GET /prueba`
-
-**Respuesta**:
-```
-¡Hola Mundo! Backend con TypeScript y SQLite funcionando
-```
+Si defines `RENDER_EXTERNAL_URL`, esa URL se agrega como servidor en Swagger. En producción, define también `JWT_ACCESS_SECRET` y `JWT_REFRESH_SECRET` con valores seguros.
 
 ## 🔒 Seguridad
 
-### Tokens
+- **Contraseñas:** hasheadas con bcrypt (10 rounds), nunca se devuelven en las respuestas.
+- **Sesión:** el `sessionToken` (JWT) dura 15 minutos.
+- **Logout:** el token se agrega a `token_blocklist` y deja de ser válido.
+- **API Keys:** obligatorias en `/api`; se validan contra la tabla `api_keys`.
 
-- **Access Token**: 
-  - Duración: 15 minutos
-  - Uso: Autenticación de peticiones
-  - Almacenamiento: Cliente (memoria, no localStorage)
+## 📝 Notas conocidas
 
-- **Refresh Token**:
-  - Duración: 7 días
-  - Uso: Renovar Access Token
-  - Almacenamiento: Base de datos
-
-### Contraseñas
-
-- Hasheadas con **bcrypt** (10 rounds)
-- Nunca se devuelven en las respuestas de la API
-
-### Secrets
-
-- Diferentes secrets para Access y Refresh tokens
-- Configurables en `bootstrap.yml`
-- Deben cambiarse en producción
-
-## 📝 Scripts Disponibles
-
-```bash
-# Desarrollo con hot-reload
-npm run dev
-
-# Compilar TypeScript
-npm run build
-
-# Ejecutar versión compilada
-npm start
-```
-
-## 🌐 CORS
-
-CORS está habilitado para todas las origins (`*`) por defecto. Para restringir en producción, modifica `bootstrap.yml`:
-
-```yaml
-cors:
-  enabled: true
-  origin: "https://tu-dominio.com"
-```
-
-## 📚 Arquitectura del Código
-
-### Capas
-
-1. **Rutas** (`routes/`) - Definición de endpoints
-2. **Controladores** (`controllers/`) - Lógica de negocio
-3. **Modelos** (`models/`) - Interacción con la base de datos
-4. **Configuración** (`config/`) - Configuración y utilidades
-
-### Convenciones de Código
-
-- ✅ Todo en español (variables, funciones, comentarios)
-- ✅ Tipado estricto con TypeScript
-- ✅ Funciones asíncronas con async/await
-- ✅ Manejo de errores con try/catch
-- ✅ Respuestas consistentes en JSON
-
-## 🚧 Mejoras Futuras
-
-- [ ] Logging con Winston
-- [ ] Migración a PostgreSQL para producción
-- [ ] Documentación con Swagger/OpenAPI
-- [ ] Roles y permisos de usuario
+- **No hay refresh tokens**: existe `JWT_REFRESH_SECRET` en la configuración, pero el flujo de renovación no está implementado.
+- **CORS:** `src/index.ts` usa `app.use(cors())` abierto a cualquier origen; las variables `CORS_ENABLED` / `CORS_ORIGIN` aún no se aplican.
+- **SQLite:** se puede seleccionar con `DB_TYPE=sqlite`, pero la inicialización de tablas usa SQL de PostgreSQL y fallará.
