@@ -64,6 +64,46 @@ export function isTokenValid(token: string, now: Date): boolean {
 	return exp * 1000 > now.getTime();
 }
 
+/** Datos de sesión (`{ id, email }`) embebidos en el payload del token. */
+export interface TokenClaims {
+	id: string;
+	email: string;
+}
+
+/**
+ * Extrae `{ id, email }` del payload sin verificar vigencia ni firma.
+ * Devuelve `null` si el token está malformado o no trae ambos campos como texto.
+ */
+export function readTokenClaims(token: string): TokenClaims | null {
+	const parts = token.split(".");
+	if (parts.length !== 3) {
+		return null;
+	}
+
+	const decoded = decodeBase64Url(parts[1]);
+	if (decoded === null) {
+		return null;
+	}
+
+	let payload: unknown;
+	try {
+		payload = JSON.parse(decoded);
+	} catch {
+		return null;
+	}
+
+	if (typeof payload !== "object" || payload === null) {
+		return null;
+	}
+
+	const { id, email } = payload as { id?: unknown; email?: unknown };
+	if (typeof id !== "string" || typeof email !== "string") {
+		return null;
+	}
+
+	return { id, email };
+}
+
 /**
  * Recorta espacios al inicio y fin.
  * Se aplica a `fullName` y `email`; NUNCA a la contraseña, porque los espacios

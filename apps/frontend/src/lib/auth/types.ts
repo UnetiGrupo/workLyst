@@ -5,8 +5,9 @@
 /** Usuario autenticado según el backend (`nombre` en el contrato REST). */
 export interface AuthUser {
 	id: string;
-	nombre: string;
 	email: string;
+	/** Ausente al recuperar sesión: el token solo contiene `id` y `email`. */
+	nombre?: string;
 }
 
 /** Sesión activa: token de sesión + datos del usuario en memoria. */
