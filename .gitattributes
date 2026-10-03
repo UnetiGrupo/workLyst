@@ -1,0 +1,25 @@
+# Normaliza los finales de línea a LF en todo el repositorio.
+# El atributo eol=lf tiene prioridad sobre core.autocrlf,
+# de modo que el working tree se mantenga en LF también en Windows.
+* text=auto eol=lf
+
+# Archivos binarios: sin normalización de texto.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.avif binary
+*.bmp binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.eot binary
+*.mp4 binary
+*.webm binary
+*.mp3 binary
+*.pdf binary
+*.zip binary
+*.gz binary
