@@ -21,22 +21,33 @@
     y mensajes en español (`400` por `mensaje`: duplicado vs. obligatorios;
     `401/403`, `429`, red).
 
-- [ ] **T5. Adaptadores de auth (mock + api) y fábrica.** RF-01, RF-03, RF-05
+- [x] **T5. Adaptadores de auth (mock + api) y fábrica.** RF-01, RF-03, RF-05
   - Hecho cuando: `auth-service.ts` define el contrato, `mock/auth-mock.ts`
     implementa registro/login/logout con latencia y errores, `api/auth-api.ts`
     mapea `fullName → usuario` y `sessionToken → token`, y `auth-adapter.ts`
     elige el adaptador con `VITE_API_MODE` (default `mock`). Test
     `tests/auth/auth-mock.test.ts` en verde.
+  - Nota (Cambio v1.1, 2026-10-02): completada con la estructura de cuatro
+    unidades (`auth-service.ts`, `auth-adapter.ts`, `api/`, `mock/`); esa
+    estructura queda sustituida por la mínima aprobada y se refactora en T5b.
 
-- [ ] **T6. Store de sesión Zustand + tests.** RF-01, RF-03, RF-04, RF-05
+- [x] **T5b. Refactor a la estructura mínima de la capa de auth (Cambio v1.1).**
+  RF-01, RF-03, RF-05 · RNF-05, RNF-06
+  - Consolidar `src/lib/auth/auth-api.ts` (contrato `AuthService` + adaptador
+    real + fábrica `getAuthService()`/`authService` con `VITE_API_MODE`,
+    default `mock`) y subir el mock a `src/lib/auth/auth-mock.ts`; se
+    eliminan `auth-service.ts`, `auth-adapter.ts` y las carpetas `api/` y
+    `mock/`.
+  - Hecho cuando: los mismos 97 tests quedan redistribuidos sin pérdida de
+    cobertura (`auth-adapter.test.ts` se consolida en `auth-api.test.ts`),
+    `pnpm test` y `pnpm check` en verde, y los comentarios reducidos a los
+    imprescindibles (RNF-06).
+
+- [x] **T6. Store de sesión Zustand + tests.** RF-01, RF-03, RF-04, RF-05
   - Hecho cuando: `tests/auth/auth-store.test.ts` pasa en verde cubriendo
     login/register/logout/restoreSession contra el mock, registro enviando
     `usuario`, `400` de duplicado vs. campos faltantes, `429`, logout
     local-autoritativo cuando la API rechaza.
-
-- [ ] **T7. Hook `useAuth` para la UI.** RF-01, RF-03, RF-04, RF-05
-  - Hecho cuando: el hook expone el estado de sesión y las funciones listas,
-    y `pnpm check` (Biome) no reporta errores de tipos.
 
 - [ ] **T8. Conectar SigninForm al flujo real.** RF-03, RF-06
   - Hecho cuando: con mock, un login válido guarda token y redirige a `/`;
@@ -86,3 +97,13 @@
   iteración como deuda técnica (excepción al principio 4, justificada en que la
   app no está terminada).
 - `docs/scope.md` no se modifica (documento de referencia futura, no rector).
+- **Cambio v1.1 aprobado (2026-10-02)**: estructura mínima de la capa de auth —
+  `src/lib/auth/auth-api.ts` (contrato `AuthService` + adaptador real +
+  fábrica `getAuthService()`/`authService`) y `src/lib/auth/auth-mock.ts`
+  (fixtures/estado simulado, separado); desaparecen `auth-service.ts`,
+  `auth-adapter.ts` y las carpetas `api/` y `mock/`. Se documenta en la spec
+  (RNF-05/RNF-06) y se ejecuta como T5b, pendiente por decisión del usuario.
+  `AGENTS.md` incorpora las reglas de comentarios imprescindibles y de
+  estructura mínima (YAGNI).
+- **T7 eliminada (2026-10-02)**: el hook `useAuth` se descarta (YAGNI); la UI
+  consume `useAuthStore` directamente.

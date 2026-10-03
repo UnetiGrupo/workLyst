@@ -1,6 +1,6 @@
 # Spec 001 — Auth
 
-Estado: revisada — pendiente de aprobación del usuario
+Estado: aprobada — Cambios v1.1 y v1.2 incorporados (2026-10-02)
 
 > Fase 0 del alcance (docs/scope.md). Primera spec de la v2. La interfaz ya está
 > maquetada; esta spec cubre la lógica de conexión con el backend y las
@@ -154,6 +154,8 @@ indicación de próxima disponibilidad (no hay OAuth en el backend).
 | RNF-02 | Validación de formato/fortaleza en vivo mientras se escribe (no espera al envío), acotada a validación local (contraseña de registro y campos obligatorios); los errores del servidor no se anticipan. |
 | RNF-03 | Cero datos de usuario en almacenamiento persistente salvo el token de sesión.         |
 | RNF-04 | Los mensajes de error son accionables y claros; nunca se expone el detalle técnico.   |
+| RNF-05 | Estructura mínima de archivos (YAGNI): no separar contrato, fábrica o mock en archivos propios ni usar carpetas de un solo archivo, salvo cuando el tamaño o la responsabilidad real lo exijan. |
+| RNF-06 | Comentarios solo lo imprescindible: prohibidas la paráfrasis del código, las referencias a RF/RNF y el historial de cambios; un mejor nombre es preferible a un comentario. |
 
 ## Casos límite
 
@@ -253,3 +255,35 @@ backend real:
 12. **Fuera de alcance RF-06**: aclarado que el link de recuperación no navega.
 13. **Definiciones/almacenamiento**: aclarado que la sesión web sobrevive al
     cierre del navegador (localStorage).
+
+## Cambio v1.1 (2026-10-02)
+
+Cambio estructural aprobado por el usuario. Ningún requisito funcional
+cambia: los RF, los casos límite y los criterios de finalización se mantienen
+intactos; solo se añaden dos requisitos no funcionales y se fija la estructura
+interna de la capa de adaptadores. El refactor del código queda pendiente
+(tarea T5b del plan).
+
+1. **RNF-05 (nuevo)**: la capa de adaptadores de auth se reduce a dos archivos:
+   - `src/lib/auth/auth-api.ts`: contrato `AuthService` + adaptador real +
+     fábrica `getAuthService()`/`authService`, que resuelve `VITE_API_MODE`
+     (default `mock`; `api` y `real` seleccionan el adaptador real).
+   - `src/lib/auth/auth-mock.ts`: adaptador mock, subido desde `mock/`; queda
+     separado del anterior por ser fixtures/estado simulado.
+2. **Desaparecen** `auth-service.ts`, `auth-adapter.ts` y las carpetas `api/` y
+   `mock/`: ni el contrato ni la fábrica justifican archivo propio ni carpetas
+   de un solo archivo (YAGNI).
+3. **RNF-06 (nuevo)**: política de comentarios, aplicada durante el refactor.
+4. Los tests se redistribuyen sin pérdida de cobertura (plan §6.1, tarea T5b).
+5. Hasta ejecutar T5b, el código mantiene la estructura anterior (cuatro
+   archivos); esta spec ya refleja la aprobada (la spec manda, constitución
+   principio 2).
+
+## Cambio v1.2 (2026-10-02)
+
+Cambio estructural aprobado por el usuario. Ningún requisito funcional cambia:
+los RF, los casos límite y los criterios de finalización se mantienen intactos.
+La UI consume el store de sesión directamente (`useAuthStore`); se descarta el
+hook intermedio `useAuth` por ser una indirección sin valor propio (YAGNI,
+coherente con RNF-05). No se crea `src/hooks/use-auth.ts` ni archivo
+equivalente.

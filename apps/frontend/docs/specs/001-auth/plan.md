@@ -1,6 +1,8 @@
 # PLAN — Spec 001 Auth
 
-> Generado: 2026-10-01 · Actualizado: 2026-10-02 (revisión QA).
+> Generado: 2026-10-01 · Actualizado: 2026-10-02 (revisión QA · Cambio v1.1:
+> estructura mínima de la capa de auth · Cambio v1.2: sin hook, la UI consume
+> el store directamente).
 > Aprobado por el usuario con estructura mínima de archivos (Zustand) y tests en
 > Vitest. Espeja la decisión del alcance (docs/scope.md): contrato + adaptadores,
 > mock por defecto.
@@ -13,13 +15,15 @@
 | `src/lib/auth/password.ts` | Funciones puras de contraseña: 4 reglas (con set especial `!@#$%^&*`) y nivel 0–3 | RF-02 |
 | `src/lib/auth/token.ts` | Funciones puras de token: decodificación JWT, vigencia y detección de token corrupto | RF-04 |
 | `src/lib/auth/types.ts` | Tipos compartidos: `AuthUser`, `Session`, `RegisterData` (`fullName`), `Credentials`, `AuthError` con `code` | Todos |
-| `src/services/auth-service.ts` | Interfaz/contrato del adaptador de auth (fachada pura). El store la consume; no sabe si el modo es mock o real | RF-01, RF-03, RF-05 |
-| `src/services/mock/auth-mock.ts` | Adaptador mock: usuarios en memoria, latencia y errores simulados (mismo patrón que `home-mocks.ts`). Implementa `auth-service` | RF-01, RF-03, RF-05 |
-| `src/services/api/auth-api.ts` | Adaptador real: llama a `lib/api.ts`, mapea `fullName → usuario`, `sessionToken → token`, y traduce errores | RF-01, RF-03, RF-05 |
-| `src/services/auth-adapter.ts` | **Fábrica de adaptador**: lee `VITE_API_MODE` (`mock` \| `real`, por defecto `mock`) y devuelve la implementación correspondiente. Único punto que conoce el modo | Todos |
-| `src/stores/auth-store.ts` | Store Zustand: estado `{ token, user, status }` + acciones `login`, `register`, `logout`, `restoreSession` (consumen `auth-adapter`) | RF-01, RF-03, RF-04, RF-05 |
-| `src/hooks/use-auth.ts` | Hook consumidor del store: expone estado y funciones listas para la UI | Todos |
+| `src/lib/auth/auth-api.ts` | Contrato `AuthService` + adaptador real (llama a `lib/api.ts`, mapea `fullName → usuario`, `sessionToken → token`, traduce errores) + fábrica `getAuthService()`/`authService` que lee `VITE_API_MODE` (default `mock`; `api` \| `real` seleccionan el real). Único punto que conoce el modo | RF-01, RF-03, RF-05 |
+| `src/lib/auth/auth-mock.ts` | Adaptador mock: usuarios en memoria, latencia y errores simulados (mismo patrón que `home-mocks.ts`). Implementa el contrato `AuthService` de `auth-api.ts`; separado de él por ser fixtures/estado simulado | RF-01, RF-03, RF-05 |
+| `src/stores/auth-store.ts` | Store Zustand: estado `{ token, user, status }` + acciones `login`, `register`, `logout`, `restoreSession` (consumen `authService` de `auth-api.ts`); la UI lo consume directamente vía `useAuthStore` | RF-01, RF-03, RF-04, RF-05 |
 | `.env.example` | Plantilla: `VITE_API_URL`, `VITE_API_KEY`, `VITE_API_MODE=mock` | RF-04 |
+
+Nota (Cambio v1.1, 2026-10-02): la capa de adaptadores queda reducida a los dos
+archivos de auth listados arriba (RNF-05 de la spec). Desaparecen
+`auth-service.ts`, `auth-adapter.ts` y las carpetas `api/` y `mock/` (estructura
+de T5); el refactor pendiente es la tarea T5b.
 
 Archivos a modificar (solo consumen el store; la lógica sale de ellos):
 
@@ -40,7 +44,8 @@ Archivos a modificar (solo consumen el store; la lógica sale de ellos):
   esta versión (el guard real llega con la fase 1), pero la entrada a `/`
   respeta el resultado de `restoreSession`. **RF-04**
 
-Nota: sin provider nuevo — Zustand es estado global sin contexto.
+Nota (Cambio v1.2): sin provider ni hook envoltorio — Zustand es estado global
+sin contexto; la UI consume `useAuthStore` directamente.
 
 Dependencias aprobadas por el usuario: `zustand` (runtime) y `vitest` (dev).
 Constitución, principio 1. **Actualización 2026-10-02**: se aprueban además las
@@ -114,21 +119,26 @@ logout():
 ## 4. Selección de adaptador y desviación del patrón de scope.md
 
 `docs/scope.md` propone un patrón genérico `src/services/<modulo>-service.ts`
-+ `src/services/mock|api/<modulo>-*.ts` con `VITE_API_MODE`. La estructura
-mínima de este módulo mantiene el mismo enfoque (contrato + mock + api +
-fábrica) pero con nombres más cortos para auth. **Desviación documentada**: el
-patrón genérico de `scope.md` aplica a los módulos futuros (fases 1+); auth es
-la primera implementación y fija el precedente. La fábrica
-`src/services/auth-adapter.ts` resuelve el modo:
++ `src/services/mock|api/<modulo>-*.ts` con `VITE_API_MODE`. **Desviación
+documentada (radicalizada en el Cambio v1.1)**: la capa de auth se reduce a dos
+archivos en `src/lib/auth/` (estructura mínima, RNF-05 de la spec):
+`auth-api.ts` (contrato `AuthService` + adaptador real + fábrica) y
+`auth-mock.ts` (fixtures/estado simulado, separado por responsabilidad real).
+El patrón genérico de `scope.md` aplica a los módulos futuros (fases 1+); auth
+es la primera implementación y fija el precedente. La fábrica vive dentro de
+`auth-api.ts` y resuelve el modo:
 
 ```
-mode = import.meta.env.VITE_API_MODE ?? "mock"   // default: mock
-return mode === "real" ? authApi : authMock
+getAuthService():
+  mode = import.meta.env.VITE_API_MODE          // default: mock
+  return mode === "api" || mode === "real" ? authApi : authMock
+
+export const authService = getAuthService()    // consumido por el store
 ```
 
-**Decisión**: el modo por defecto cuando `VITE_API_MODE` no está presente es
-`mock` (permite desarrollar y probar sin backend). `real` exige `VITE_API_URL`
-y `VITE_API_KEY`.
+**Decisión**: el modo por defecto cuando `VITE_API_MODE` no está presente (o
+tiene un valor desconocido) es `mock` (permite desarrollar y probar sin
+backend). `api`/`real` exigen `VITE_API_URL` y `VITE_API_KEY`.
 
 ## 5. Pintado en la interfaz
 
@@ -164,6 +174,13 @@ Config: `vite.config.ts` añade `test` con resolve alias `#` → `src`. Script
 
 Tests primero (rojo) por tarea, siguiendo la skill sdd. Los de store fuerzan
 `VITE_API_MODE=mock` en el test setup.
+
+**Redistribución de tests del adaptador (Cambio v1.1)**: con la estructura de
+dos archivos, el contrato/adaptador real y la fábrica se prueban en
+`tests/auth/auth-api.test.ts` (absorbe los casos de `auth-adapter.test.ts`) y
+el mock en `tests/auth/auth-mock.test.ts`. Los mismos 97 tests se
+redistribuyen sin pérdida de cobertura; la ejecución del refactor es la tarea
+T5b.
 
 ### 6.2 Tests de componente y E2E — Opción B aprobada (2026-10-02)
 
@@ -206,7 +223,7 @@ Opciones evaluadas (tabla como histórico de la decisión):
    la abstracción multiplataforma (Capacitor).
 5. **register→login encadenado en cliente** — *descartado pedir auto-login al
    backend*: no dependemos de cambios externos (CA-03 lo define).
-6. **Mocks in-memory** en `src/services/mock/` — *descartado MSW*: dependencia
+6. **Mocks in-memory** en `src/lib/auth/auth-mock.ts` — *descartado MSW*: dependencia
    pesada para simular lo mismo; mismo patrón que el código existente.
 7. **Adaptador elegido por `VITE_API_MODE` en una fábrica** (default `mock`) —
    *descartada la conmutación en runtime*: evita estados mixtos.
@@ -217,14 +234,29 @@ Opciones evaluadas (tabla como histórico de la decisión):
 10. **Punto de arranque en `__root.tsx`** que invoca `restoreSession` y redirige
     desde rutas de auth — *descartado un guard por ruta*: `__root` es el único
     punto común y evita repetir la lógica.
+11. **Estructura mínima de la capa de auth: dos archivos (Cambio v1.1,
+    aprobado)** — `src/lib/auth/auth-api.ts` agrupa el contrato `AuthService`,
+    el adaptador real y la fábrica `getAuthService()`/`authService`;
+    `src/lib/auth/auth-mock.ts` se mantiene separado por ser fixtures/estado
+    simulado. *Descartada la estructura de cuatro unidades de T5*
+    (`auth-service.ts` + `auth-adapter.ts` + carpetas `api/` y `mock/`): un
+    contrato y una fábrica sin tamaño ni responsabilidad real propia no
+    justifican archivos ni carpetas de un solo archivo (YAGNI, RNF-05).
+    *Descartado también fusionar el mock dentro de `auth-api.ts`*: mezclaría
+    fixtures con el contrato y el adaptador real.
+12. **La UI consume el store directamente, sin hook envoltorio (Cambio v1.2,
+    aprobado)** — `useAuthStore` expone el estado y las acciones listas para
+    la UI. *Descartado el hook `useAuth`* (`src/hooks/use-auth.ts`): un
+    envoltorio mínimo que solo reexportaba el store, indirección sin valor
+    propio (YAGNI, RNF-05).
 
 ## 8. Mapeo de RF cubiertos
 
 | RF | Archivos | Tests |
 |---|---|---|
-| RF-01 | api, auth-service, mock/api, adapter, store, signup-form, routes | auth-store.test.ts, signup-form.test.tsx |
+| RF-01 | api, auth-api (contrato + real + fábrica), auth-mock, store, signup-form, routes | auth-store.test.ts, signup-form.test.tsx |
 | RF-02 | lib/auth/password, signup-form | password.test.ts, signup-form.test.tsx |
-| RF-03 | api, adapter, store, signin-form, routes | auth-store.test.ts, signin-form.test.tsx |
+| RF-03 | api, auth-api, auth-mock, store, signin-form, routes | auth-store.test.ts, signin-form.test.tsx |
 | RF-04 | lib/auth/token, store, __root, routes auth | token.test.ts, auth-store.test.ts |
-| RF-05 | api, adapter, store, header/logout UI | auth-store.test.ts |
+| RF-05 | api, auth-api, auth-mock, store, header/logout UI | auth-store.test.ts |
 | RF-06 | signin/signup social buttons | signin-form.test.tsx / signup-form.test.tsx (componente) |
