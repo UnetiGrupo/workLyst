@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { isTokenValid, sanitizeText } from "#/lib/auth/token";
+import {
+	isTokenValid,
+	readTokenClaims,
+	sanitizeText,
+} from "#/lib/auth/token";
 
 // RF-04: vigencia de token (función pura) y saneo de texto de entrada.
 // CL-04: se recortan `fullName`/`email`, nunca la contraseña.
@@ -102,6 +106,43 @@ describe("isTokenValid", () => {
 			const body = toBase64Url(JSON.stringify("just-a-string"));
 			expect(isTokenValid(`${header}.${body}.sig`, NOW)).toBe(false);
 		});
+	});
+});
+
+describe("readTokenClaims", () => {
+	it("returns id and email from the payload", () => {
+		const token = buildToken({ id: "42", email: "ada@worklyst.com" });
+		expect(readTokenClaims(token)).toEqual({
+			id: "42",
+			email: "ada@worklyst.com",
+		});
+	});
+
+	it("does not require a valid exp", () => {
+		const token = buildToken({
+			id: "42",
+			email: "ada@worklyst.com",
+			exp: NOW_IN_SECONDS - 100,
+		});
+		expect(readTokenClaims(token)).toEqual({
+			id: "42",
+			email: "ada@worklyst.com",
+		});
+	});
+
+	it("returns null for a token without three parts", () => {
+		expect(readTokenClaims("onlyone")).toBeNull();
+		expect(readTokenClaims("header.payload")).toBeNull();
+	});
+
+	it("returns null when id or email is missing or not a string", () => {
+		expect(readTokenClaims(buildToken({ id: "42" }))).toBeNull();
+		expect(readTokenClaims(buildToken({ email: "a@b.com" }))).toBeNull();
+		expect(readTokenClaims(buildToken({ id: 42, email: "a@b.com" }))).toBeNull();
+	});
+
+	it("returns null for a corrupt payload", () => {
+		expect(readTokenClaims("head.@@@@.sig")).toBeNull();
 	});
 });
 
