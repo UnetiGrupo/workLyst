@@ -10,7 +10,9 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as GroupsRouteImport } from './routes/groups'
 import { Route as ProjectsRouteImport } from './routes/projects'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as AuthSigninRouteImport } from './routes/auth/signin'
 import { Route as AuthSignupRouteImport } from './routes/auth/signup'
 
@@ -19,9 +21,19 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GroupsRoute = GroupsRouteImport.update({
+  id: '/groups',
+  path: '/groups',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProjectsRoute = ProjectsRouteImport.update({
   id: '/projects',
   path: '/projects',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthSigninRoute = AuthSigninRouteImport.update({
@@ -37,34 +49,61 @@ const AuthSignupRoute = AuthSignupRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/groups': typeof GroupsRoute
   '/projects': typeof ProjectsRoute
+  '/settings': typeof SettingsRoute
   '/auth/signin': typeof AuthSigninRoute
   '/auth/signup': typeof AuthSignupRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/groups': typeof GroupsRoute
   '/projects': typeof ProjectsRoute
+  '/settings': typeof SettingsRoute
   '/auth/signin': typeof AuthSigninRoute
   '/auth/signup': typeof AuthSignupRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/groups': typeof GroupsRoute
   '/projects': typeof ProjectsRoute
+  '/settings': typeof SettingsRoute
   '/auth/signin': typeof AuthSigninRoute
   '/auth/signup': typeof AuthSignupRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/projects' | '/auth/signin' | '/auth/signup'
+  fullPaths:
+    | '/'
+    | '/groups'
+    | '/projects'
+    | '/settings'
+    | '/auth/signin'
+    | '/auth/signup'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/projects' | '/auth/signin' | '/auth/signup'
-  id: '__root__' | '/' | '/projects' | '/auth/signin' | '/auth/signup'
+  to:
+    | '/'
+    | '/groups'
+    | '/projects'
+    | '/settings'
+    | '/auth/signin'
+    | '/auth/signup'
+  id:
+    | '__root__'
+    | '/'
+    | '/groups'
+    | '/projects'
+    | '/settings'
+    | '/auth/signin'
+    | '/auth/signup'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  GroupsRoute: typeof GroupsRoute
   ProjectsRoute: typeof ProjectsRoute
+  SettingsRoute: typeof SettingsRoute
   AuthSigninRoute: typeof AuthSigninRoute
   AuthSignupRoute: typeof AuthSignupRoute
 }
@@ -78,11 +117,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/groups': {
+      id: '/groups'
+      path: '/groups'
+      fullPath: '/groups'
+      preLoaderRoute: typeof GroupsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/projects': {
       id: '/projects'
       path: '/projects'
       fullPath: '/projects'
       preLoaderRoute: typeof ProjectsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth/signin': {
@@ -104,7 +157,9 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  GroupsRoute: GroupsRoute,
   ProjectsRoute: ProjectsRoute,
+  SettingsRoute: SettingsRoute,
   AuthSigninRoute: AuthSigninRoute,
   AuthSignupRoute: AuthSignupRoute,
 }
