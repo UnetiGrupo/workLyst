@@ -6,6 +6,14 @@ import type { AuthUser, Credentials, RegisterData } from "#/lib/auth/types";
 
 export const SESSION_TOKEN_KEY = "worklyst.session-token";
 
+/** La cuenta se creó, pero el login encadenado no pudo abrir sesión. */
+export class RegisterSessionError extends Error {
+	constructor() {
+		super("No se pudo iniciar sesión tras crear la cuenta.");
+		this.name = "RegisterSessionError";
+	}
+}
+
 export type AuthStatus = "guest" | "loading" | "authenticated";
 
 interface AuthState {
@@ -63,6 +71,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 				email,
 				password: data.password,
 			});
+		} catch (error) {
+			set({ status: "guest" });
+			throw error;
+		}
+
+		try {
 			// El backend no inicia sesión al registrar: se encadena el login.
 			const session = await authService.login({
 				email,
@@ -74,9 +88,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 				user: session.user,
 				status: "authenticated",
 			});
-		} catch (error) {
+		} catch {
 			set({ status: "guest" });
-			throw error;
+			throw new RegisterSessionError();
 		}
 	},
 

@@ -107,7 +107,7 @@ export function readTokenClaims(token: string): TokenClaims | null {
 /**
  * Recorta espacios al inicio y fin.
  * Se aplica a `fullName` y `email`; NUNCA a la contraseña, porque los espacios
- * pueden ser caracteres legítimos (spec, CL-04).
+ * pueden ser caracteres legítimos.
  */
 export function sanitizeText(text: string): string {
 	return text.trim();

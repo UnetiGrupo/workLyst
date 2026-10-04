@@ -30,7 +30,7 @@ function getBackendMessage(data: unknown): string | null {
 	return typeof mensaje === "string" && mensaje.length > 0 ? mensaje : null;
 }
 
-/** Mensaje genérico para errores de red (CL-02/CL-05). */
+/** Mensaje genérico para cuando no hay conexión con el servidor. */
 const NETWORK_MESSAGE =
 	"No pudimos conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.";
 /** Mensaje genérico para errores no clasificados (nunca expone detalle). */
@@ -38,8 +38,8 @@ const UNKNOWN_MESSAGE = "Algo salió mal. Inténtalo de nuevo más tarde.";
 
 /**
  * Traduce cualquier error (AxiosError, AuthError, desconocido) a `AuthError`.
- * La desambiguación del `400` se hace por el `mensaje` del backend, tal como
- * documenta la spec (CA-02 duplicado vs. CA-04 campos obligatorios).
+ * El `400` del backend se desambigua por su `mensaje`: «El usuario ya existe»
+ * indica correo duplicado; cualquier otro texto, campos obligatorios.
  */
 export function toAuthError(error: unknown): AuthError {
 	// Si ya es un AuthError, se devuelve tal cual (idempotente).
@@ -80,7 +80,7 @@ export function toAuthError(error: unknown): AuthError {
 			.includes("credenciales")
 			? "invalid_credentials"
 			: "api_key";
-		// Nunca se expone el detalle técnico de la API Key (RNF-04).
+		// El detalle técnico de la API Key nunca se expone al usuario.
 		const message =
 			code === "api_key"
 				? UNKNOWN_MESSAGE
