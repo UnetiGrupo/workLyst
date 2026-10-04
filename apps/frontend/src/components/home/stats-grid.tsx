@@ -52,7 +52,7 @@ export function StatsGrid({ stats }: StatsGridProps) {
 				return (
 					<div
 						key={stat.id}
-						className="flex flex-col justify-between rounded-xl border border-worklyst-border bg-worklyst-surface p-4 shadow-xs"
+						className="flex flex-col justify-between rounded-lg border border-worklyst-border bg-worklyst-surface p-4 shadow-xs"
 					>
 						<div className="mb-3 flex items-center justify-between">
 							<div

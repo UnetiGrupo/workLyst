@@ -6,7 +6,7 @@ interface ActivityFeedProps {
 
 export function ActivityFeed({ activities }: ActivityFeedProps) {
 	return (
-		<div className="rounded-xl border border-worklyst-border bg-worklyst-surface p-4 shadow-xs md:p-5">
+		<div className="rounded-lg border border-worklyst-border bg-worklyst-surface p-4 shadow-xs md:p-5">
 			<div className="mb-4 flex items-center justify-between">
 				<h3 className="text-sm font-bold text-worklyst-text md:text-base">
 					Actividad Reciente

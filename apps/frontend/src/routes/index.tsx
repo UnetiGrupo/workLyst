@@ -23,7 +23,7 @@ function Home() {
 	}
 
 	return (
-		<div className="mx-auto w-full max-w-7xl px-4 py-4 pb-24 font-display text-worklyst-text md:px-6 md:pb-8 lg:px-8">
+		<div className="mx-auto w-full max-w-7xl px-4 py-4 font-display text-worklyst-text md:px-6 lg:px-8">
 			<Greeting
 				userName="Orlando"
 				criticalTasksCount={4}

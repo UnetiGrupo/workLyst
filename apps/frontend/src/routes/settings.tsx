@@ -53,12 +53,11 @@ const MENU_OPTIONS = [
 
 function RouteComponent() {
 	return (
-		<main className="min-h-screen bg-worklyst-bg pb-28 px-4 pt-6 flex flex-col gap-6 font-display">
+		<main className="min-h-screen pb-4 px-4 pt-6 flex flex-col gap-6 font-display">
 			<header className="flex items-center gap-3">
-				<div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 font-bold text-sm">
-					O
-				</div>
-				<h1 className="text-xl font-bold text-worklyst-text">Ajustes</h1>
+				<h1 className="text-2xl font-extrabold text-worklyst-text md:text-3xl 2xl:text-4xl">
+					Ajustes
+				</h1>
 			</header>
 
 			<section className="bg-worklyst-surface rounded-2xl p-6 flex flex-col items-center border border-worklyst-border shadow-sm">
@@ -71,7 +70,7 @@ function RouteComponent() {
 				</p>
 				<button
 					type="button"
-					className="bg-primary-600 hover:bg-primary-700 active:bg-primary-800 text-white px-6 py-2 rounded-xl font-mono text-sm font-medium transition-colors"
+					className="bg-primary-600 hover:bg-primary-700 active:bg-primary-800 text-white px-6 py-2 rounded-lg font-mono text-sm font-medium transition-colors"
 				>
 					Completar Perfil
 				</button>
@@ -89,7 +88,7 @@ function RouteComponent() {
 							>
 								<div className="flex items-center gap-4">
 									<div
-										className={`w-10 h-10 rounded-xl flex items-center justify-center ${option.bg} ${option.color}`}
+										className={`w-10 h-10 rounded-lg flex items-center justify-center ${option.bg} ${option.color}`}
 									>
 										<Icon size={20} strokeWidth={2.5} />
 									</div>

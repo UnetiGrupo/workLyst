@@ -21,7 +21,7 @@ export function UpcomingTasks({ tasks }: UpcomingTasksProps) {
 	const urgentCount = tasks.filter((t) => t.priority === "URGENTE").length;
 
 	return (
-		<section className="rounded-xl border border-worklyst-border bg-worklyst-surface p-4 shadow-xs md:p-5">
+		<section className="rounded-lg border border-worklyst-border bg-worklyst-surface p-4 shadow-xs md:p-5">
 			<div className="mb-4 flex items-center justify-between">
 				<div className="flex items-center gap-2.5">
 					<h3 className="text-base font-bold text-worklyst-text md:text-lg">

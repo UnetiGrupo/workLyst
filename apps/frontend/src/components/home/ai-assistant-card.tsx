@@ -2,7 +2,7 @@ import { Bot, Sparkles } from "lucide-react";
 
 export function AiAssistantCard() {
 	return (
-		<div className="rounded-xl border border-worklyst-border bg-worklyst-surface p-4 shadow-xs md:p-5">
+		<div className="rounded-lg border border-worklyst-border bg-worklyst-surface p-4 shadow-xs md:p-5">
 			<div className="mb-4 flex items-center justify-between">
 				<div className="flex items-center gap-2">
 					<div className="flex size-8 items-center justify-center rounded-lg bg-primary-50">

@@ -41,7 +41,7 @@ export function CurrentProjects({ projects }: CurrentProjectsProps) {
 				{projects.map((project, index) => (
 					<article
 						key={project.id}
-						className="flex flex-col justify-between rounded-xl border border-worklyst-border bg-worklyst-surface p-4 shadow-xs transition-all hover:shadow-sm"
+						className="flex flex-col justify-between rounded-lg border border-worklyst-border bg-worklyst-surface p-4 shadow-xs transition-all hover:shadow-sm"
 					>
 						<div className="mb-3 flex items-start justify-between">
 							<div className="flex size-10 items-center justify-center rounded-lg bg-primary-50">
