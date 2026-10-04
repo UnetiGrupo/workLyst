@@ -1,5 +1,5 @@
 /**
- * RF-04: utilidades puras de sesión.
+ * Utilidades puras para validar y leer tokens de sesión.
  * Funciones puras: sin IO y sin React.
  */
 

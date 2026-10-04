@@ -1,5 +1,5 @@
 /**
- * RF-02: reglas de contraseña y nivel de seguridad (solo cliente, solo registro).
+ * Reglas de contraseña y cálculo del nivel de seguridad en el cliente.
  * Funciones puras: sin IO y sin React.
  */
 

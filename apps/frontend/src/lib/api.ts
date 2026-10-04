@@ -1,7 +1,6 @@
 /**
- * RF-01, RF-03, RF-05: cliente HTTP central.
- * Único punto de contacto con la red del frontend. Traduce los errores del
- * backend a `AuthError` con código y mensaje en español (RNF-04).
+ * Cliente HTTP central del frontend: instancia axios y traducción de los
+ * errores del backend a `AuthError` con código y mensaje en español.
  */
 import axios from "axios";
 

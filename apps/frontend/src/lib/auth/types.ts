@@ -1,6 +1,4 @@
-/**
- * RF-01, RF-03, RF-04, RF-05: tipos compartidos del módulo de auth.
- */
+/** Tipos compartidos del módulo de autenticación. */
 
 /** Usuario autenticado según el backend (`nombre` en el contrato REST). */
 export interface AuthUser {
