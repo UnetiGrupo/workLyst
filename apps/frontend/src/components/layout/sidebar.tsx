@@ -1,4 +1,4 @@
-import { Link, useLocation } from "@tanstack/react-router";
+import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import {
 	Folder,
 	LayoutDashboard,
@@ -8,7 +8,8 @@ import {
 	Users,
 } from "lucide-react";
 import { motion } from "motion/react";
-import type { ComponentType, SVGProps } from "react";
+import { type ComponentType, type SVGProps, useState } from "react";
+import { useAuthStore } from "#/stores/auth-store";
 
 interface NavItem {
 	id: string;
@@ -27,10 +28,23 @@ export const NAV_ITEMS: NavItem[] = [
 
 export function Sidebar() {
 	const location = useLocation();
+	const navigate = useNavigate();
+	const logout = useAuthStore((state) => state.logout);
+	const [isLoggingOut, setIsLoggingOut] = useState(false);
 
 	const isActive = (href: string) => {
 		if (href === "/") return location.pathname === "/";
 		return location.pathname.startsWith(href);
+	};
+
+	const handleLogout = async () => {
+		setIsLoggingOut(true);
+		try {
+			await logout();
+			await navigate({ to: "/auth/signin" });
+		} finally {
+			setIsLoggingOut(false);
+		}
 	};
 
 	return (
@@ -109,6 +123,8 @@ export function Sidebar() {
 					</div>
 					<button
 						type="button"
+						onClick={handleLogout}
+						disabled={isLoggingOut}
 						className="shrink-0 flex items-center justify-center w-8 h-8 rounded-md text-worklyst-text-sub hover:bg-red-50 hover:text-red-500 transition-all duration-200 cursor-pointer active:scale-95"
 						title="Cerrar sesión"
 					>
