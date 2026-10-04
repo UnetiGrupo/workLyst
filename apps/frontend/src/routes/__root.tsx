@@ -6,10 +6,11 @@ import {
 	useLocation,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
-import { AnimatePresence, motion } from "motion/react";
+import { useEffect, useRef, useState } from "react";
 import { BottomNav } from "#/components/layout/bottom-nav";
 import { Header } from "#/components/layout/header";
 import { Sidebar } from "#/components/layout/sidebar";
+import { useAuthStore } from "#/stores/auth-store";
 import appCss from "../styles.css?url";
 
 export const Route = createRootRoute({
@@ -41,33 +42,48 @@ export const Route = createRootRoute({
 	shellComponent: RootDocument,
 });
 
+function LoadingScreen() {
+	return (
+		<div className="flex h-dvh w-full items-center justify-center bg-worklyst-bg">
+			<div className="size-8 animate-spin rounded-full border-2 border-worklyst-border border-t-primary-600" />
+		</div>
+	);
+}
+
 function RootDocument({ children }: { children: React.ReactNode }) {
 	const location = useLocation();
+	const restoreSession = useAuthStore((state) => state.restoreSession);
+	const [isBooted, setIsBooted] = useState(false);
+	const hasRestored = useRef(false);
+
+	useEffect(() => {
+		if (hasRestored.current) {
+			return;
+		}
+		hasRestored.current = true;
+		restoreSession().finally(() => setIsBooted(true));
+	}, [restoreSession]);
+
 	const showLayout = !location.pathname.includes("/auth");
 
 	return (
-		<html lang="en">
+		<html lang="es">
 			<head>
 				<HeadContent />
 			</head>
 			<body className="flex h-dvh">
-				{showLayout && <Sidebar />}
-				<div className="flex flex-1 flex-col overflow-y-auto">
-					{showLayout && <Header />}
-					<AnimatePresence mode="wait">
-						<motion.main
-							key={location.pathname}
-							initial={{ opacity: 0, y: 8 }}
-							animate={{ opacity: 1, y: 0 }}
-							exit={{ opacity: 0, y: -8 }}
-							transition={{ duration: 0.2, ease: "easeOut" }}
-							className="flex-1"
-						>
-							{children}
-						</motion.main>
-					</AnimatePresence>
-				</div>
-				{showLayout && <BottomNav />}
+				{isBooted ? (
+					<>
+						{showLayout && <Sidebar />}
+						<div className="flex flex-1 flex-col overflow-y-auto">
+							{showLayout && <Header />}
+							<main className="flex-1">{children}</main>
+						</div>
+						{showLayout && <BottomNav />}
+					</>
+				) : (
+					<LoadingScreen />
+				)}
 				<TanStackDevtools
 					config={{
 						position: "bottom-right",

@@ -1,4 +1,5 @@
-﻿import { createFileRoute } from "@tanstack/react-router";
+﻿import { createFileRoute, Navigate } from "@tanstack/react-router";
+import { useAuthStore } from "#/stores/auth-store";
 import { ActivityFeed } from "@/components/home/activity-feed";
 import { AiAssistantCard } from "@/components/home/ai-assistant-card";
 import { CurrentProjects } from "@/components/home/current-projects";
@@ -15,6 +16,12 @@ import {
 export const Route = createFileRoute("/")({ component: Home });
 
 function Home() {
+	const isGuest = useAuthStore((state) => state.status === "guest");
+
+	if (isGuest) {
+		return <Navigate to="/auth/signin" />;
+	}
+
 	return (
 		<div className="mx-auto w-full max-w-7xl px-4 py-4 pb-24 font-display text-worklyst-text md:px-6 md:pb-8 lg:px-8">
 			<Greeting
