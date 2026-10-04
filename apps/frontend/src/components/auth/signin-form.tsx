@@ -4,8 +4,12 @@ import { useState } from "react";
 import { Button } from "#/components/common/button";
 import { GitHub, Google } from "#/components/common/icons";
 import { Input } from "#/components/common/input";
+import { canSubmitLogin } from "#/lib/auth/form-validation";
 import { AuthError } from "#/lib/auth/types";
 import { useAuthStore } from "#/stores/auth-store";
+
+const REQUIRED_FIELD_MESSAGE = "Este campo es requerido";
+const INVALID_EMAIL_MESSAGE = "Ingresa un correo electrónico válido";
 
 const FORM_FIELDS = [
 	{
@@ -32,18 +36,27 @@ const SOCIAL_BUTTONS = [
 const LOGIN_ERROR_MESSAGE =
 	"Correo o contraseña incorrectos. Verifica tus datos e inténtalo de nuevo.";
 
-// El rate limit y los fallos de red/desconocidos muestran el mensaje del backend;
-// credenciales y API Key comparten el mensaje genérico (no se filtra detalle).
+const UNEXPECTED_LOGIN_ERROR_MESSAGE =
+	"No pudimos iniciar sesión. Inténtalo de nuevo en unos momentos.";
+
+// Credenciales y API Key comparten el mensaje genérico; el rate limit, la falta
+// de conexión y los campos faltantes muestran el mensaje del adaptador. Cualquier
+// otro fallo (código no cubierto o error ajeno al adaptador) usa el mensaje
+// genérico, nunca el de credenciales.
 function toLoginErrorMessage(error: unknown): string {
-	if (
-		error instanceof AuthError &&
-		(error.code === "rate_limited" ||
+	if (error instanceof AuthError) {
+		if (error.code === "invalid_credentials" || error.code === "api_key") {
+			return LOGIN_ERROR_MESSAGE;
+		}
+		if (
+			error.code === "rate_limited" ||
 			error.code === "network" ||
-			error.code === "unknown")
-	) {
-		return error.message;
+			error.code === "missing_fields"
+		) {
+			return error.message;
+		}
 	}
-	return LOGIN_ERROR_MESSAGE;
+	return UNEXPECTED_LOGIN_ERROR_MESSAGE;
 }
 
 export function SigninForm() {
@@ -57,6 +70,7 @@ export function SigninForm() {
 		},
 		onSubmit: async ({ value }) => {
 			setBannerError(null);
+			if (!canSubmitLogin(value)) return;
 			try {
 				await useAuthStore.getState().login(value);
 			} catch (error) {
@@ -118,7 +132,10 @@ export function SigninForm() {
 						name={field.name}
 						validators={{
 							onChange: ({ value }) => {
-								if (!value) return "Este campo es requerido";
+								if (!value) return REQUIRED_FIELD_MESSAGE;
+								if (field.name === "email" && !value.includes("@")) {
+									return INVALID_EMAIL_MESSAGE;
+								}
 								return undefined;
 							},
 						}}
@@ -175,13 +192,15 @@ export function SigninForm() {
 				</div>
 
 				<form.Subscribe
-					selector={(state) => [state.canSubmit, state.isSubmitting]}
+					selector={(state) =>
+						[canSubmitLogin(state.values), state.isSubmitting] as const
+					}
 				>
-					{([canSubmit, isSubmitting]) => (
+					{([ready, isSubmitting]) => (
 						<Button
 							type="submit"
-							disabled={!canSubmit || isSubmitting}
-							className="w-full"
+							disabled={!ready || isSubmitting}
+							className="w-full disabled:opacity-60 disabled:cursor-not-allowed"
 						>
 							{isSubmitting ? "Iniciando sesión..." : "Iniciar sesión"}
 						</Button>

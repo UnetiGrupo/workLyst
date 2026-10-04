@@ -4,9 +4,13 @@ import { useState } from "react";
 import { Button } from "#/components/common/button";
 import { GitHub, Google } from "#/components/common/icons";
 import { Input } from "#/components/common/input";
+import { canSubmitRegister } from "#/lib/auth/form-validation";
 import { validatePasswordRules } from "#/lib/auth/password";
 import { AuthError } from "#/lib/auth/types";
-import { useAuthStore } from "#/stores/auth-store";
+import { RegisterSessionError, useAuthStore } from "#/stores/auth-store";
+
+const REQUIRED_FIELD_MESSAGE = "Este campo es requerido";
+const INVALID_EMAIL_MESSAGE = "Ingresa un correo electrónico válido";
 
 const FORM_FIELDS = [
 	{
@@ -47,17 +51,26 @@ const SECURITY_LEVELS = [
 const REGISTER_ERROR_MESSAGE =
 	"No pudimos crear tu cuenta. Inténtalo de nuevo.";
 
-function isPasswordStrong(password: string): boolean {
-	const rules = validatePasswordRules(password);
-	return (
-		rules.minLength && rules.upperAndLower && rules.number && rules.special
-	);
-}
+const REGISTER_SESSION_MESSAGE =
+	"Tu cuenta se creó, pero no pudimos iniciar sesión automáticamente. Intenta iniciar sesión con tu correo y contraseña.";
 
-// El `missing_fields`, el rate limit y los fallos de red muestran el mensaje
-// (en español) del adaptador; el resto usa un mensaje genérico.
+// Los campos faltantes, el rate limit y los fallos de red muestran el mensaje
+// (en español) del adaptador; el resto usa un mensaje genérico. Si el registro
+// creó la cuenta pero el login encadenado falló, se invita a iniciar sesión.
 function toRegisterErrorMessage(error: unknown): string {
-	return error instanceof AuthError ? error.message : REGISTER_ERROR_MESSAGE;
+	if (error instanceof RegisterSessionError) {
+		return REGISTER_SESSION_MESSAGE;
+	}
+	if (error instanceof AuthError) {
+		if (
+			error.code === "missing_fields" ||
+			error.code === "rate_limited" ||
+			error.code === "network"
+		) {
+			return error.message;
+		}
+	}
+	return REGISTER_ERROR_MESSAGE;
 }
 
 export function SignupForm() {
@@ -74,7 +87,7 @@ export function SignupForm() {
 		onSubmit: async ({ value }) => {
 			setBannerError(null);
 			setEmailError(null);
-			if (!isPasswordStrong(value.password)) return;
+			if (!canSubmitRegister(value)) return;
 
 			try {
 				await useAuthStore.getState().register(value);
@@ -141,7 +154,10 @@ export function SignupForm() {
 						name={field.name}
 						validators={{
 							onChange: ({ value }) => {
-								if (!value) return "Este campo es requerido";
+								if (!value) return REQUIRED_FIELD_MESSAGE;
+								if (field.name === "email" && !value.includes("@")) {
+									return INVALID_EMAIL_MESSAGE;
+								}
 								return undefined;
 							},
 						}}
@@ -171,7 +187,7 @@ export function SignupForm() {
 					name="password"
 					validators={{
 						onChange: ({ value }) => {
-							if (!value) return "Este campo es requerido";
+							if (!value) return REQUIRED_FIELD_MESSAGE;
 							return undefined;
 						},
 					}}
@@ -275,20 +291,14 @@ export function SignupForm() {
 
 				<form.Subscribe
 					selector={(state) =>
-						[
-							state.canSubmit,
-							state.isSubmitting,
-							state.values.password,
-						] as const
+						[canSubmitRegister(state.values), state.isSubmitting] as const
 					}
 				>
-					{([canSubmit, isSubmitting, password]) => (
+					{([ready, isSubmitting]) => (
 						<Button
 							type="submit"
-							disabled={
-								!canSubmit || isSubmitting || !isPasswordStrong(password)
-							}
-							className="w-full flex items-center justify-center gap-2"
+							disabled={!ready || isSubmitting}
+							className="w-full flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
 						>
 							{isSubmitting ? (
 								"Creando cuenta..."

@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { motion } from "motion/react";
 import { type ComponentType, type SVGProps, useState } from "react";
+import { displayInitials, displayName } from "#/lib/auth/user-display";
 import { useAuthStore } from "#/stores/auth-store";
 
 interface NavItem {
@@ -30,7 +31,11 @@ export function Sidebar() {
 	const location = useLocation();
 	const navigate = useNavigate();
 	const logout = useAuthStore((state) => state.logout);
+	const user = useAuthStore((state) => state.user);
 	const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+	const name = displayName(user);
+	const initials = displayInitials(name);
 
 	const isActive = (href: string) => {
 		if (href === "/") return location.pathname === "/";
@@ -111,15 +116,17 @@ export function Sidebar() {
 			<div className="px-3 pb-4">
 				<div className="flex items-center gap-3 px-3 py-3 rounded-lg bg-worklyst-tiza-bg">
 					<div className="shrink-0 flex items-center justify-center w-9 h-9 rounded-lg bg-primary-500 text-white text-xs font-bold tracking-wide">
-						OL
+						{initials}
 					</div>
 					<div className="flex-1 min-w-0">
 						<p className="text-sm font-semibold text-worklyst-text truncate leading-tight">
-							Orlando Lopez
+							{name}
 						</p>
-						<p className="text-[11px] text-worklyst-text-sub truncate">
-							orlando@worklyst.com
-						</p>
+						{user?.email ? (
+							<p className="text-[11px] text-worklyst-text-sub truncate">
+								{user.email}
+							</p>
+						) : null}
 					</div>
 					<button
 						type="button"
