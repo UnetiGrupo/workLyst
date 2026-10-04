@@ -91,6 +91,61 @@
     login→dashboard, recarga mantiene sesión y logout→signin, contra el
     adaptador mock.
 
+- [x] **T12. Limpieza de referencias a la spec en comentarios (Cambio v1.3).**
+  RNF-06
+  - Reexpresar en español, sin perder la información útil, los comentarios
+    inline que citan identificadores de la spec: `src/lib/api.ts` (errores de
+    red, desambiguación del `400`, API Key), `src/lib/auth/token.ts`
+    (espacios en la contraseña) y `tests/auth/api.test.ts`,
+    `tests/auth/token.test.ts`, `tests/auth/password.test.ts`.
+  - Hecho cuando: una búsqueda de `RF-`, `RNF-`, `CA-` y `CL-` sobre `src/` y
+    `tests/` no devuelve ninguna referencia, la información útil sigue
+    presente reexpresada como descripción funcional, y `pnpm test` y
+    `pnpm check` siguen en verde.
+
+- [x] **T13. Mínimo obligatorio de los botones de envío (Cambio v1.3).**
+  RF-01 CA-01, RF-02, RF-03 CA-04
+  - Crear `src/lib/auth/form-validation.ts` con `canSubmitRegister` (campos
+    llenos tras recorte + correo con `@` + 4 reglas) y `canSubmitLogin`
+    (campos llenos + correo con `@` + contraseña no vacía, sin reglas) y su
+    test `tests/auth/form-validation.test.ts`. Conectar ambos formularios:
+    el botón se habilita solo con el predicado cumplido y `onSubmit` usa la
+    misma guarda; el correo sin `@` muestra «Ingresa un correo electrónico
+    válido» junto al campo en ambos formularios.
+  - Hecho cuando: ambos botones nacen deshabilitados con campos vacíos, se
+    habilitan exactamente al cumplir su mínimo (una contraseña débil pero no
+    vacía habilita el login), un envío con datos inválidos no dispara
+    petición y muestra el error junto al campo, y `pnpm test` y `pnpm check`
+    están en verde.
+
+- [x] **T14. Identidad real en la barra lateral (Cambio v1.3).** RF-07
+  - Crear `src/lib/auth/user-display.ts` (`displayName`: `nombre` → parte
+    local del correo capitalizada → «Invitado»; `displayInitials`) con su
+    test `tests/auth/user-display.test.ts`; conectar
+    `src/components/layout/sidebar.tsx` al `useAuthStore` (nombre visible,
+    correo e iniciales reales; sin sesión: «Invitado» y sin línea de correo)
+    y cubrir el componente con `tests/layout/sidebar.test.tsx` (router en
+    memoria con ruta raíz, store en sus tres estados).
+  - Hecho cuando: con sesión con `nombre` se muestran nombre, correo e
+    iniciales reales; con sesión restaurada (sin `nombre`) el nombre visible
+    se deriva del correo; sin sesión se muestra «Invitado» sin línea de
+    correo; no quedan los datos fijos de maqueta, y `pnpm test` y
+    `pnpm check` están en verde.
+
+- [x] **T15. Mensajes de error para flujos no previstos (Cambio v1.3).**
+  RF-01 CA-05/CA-06, RF-03 CA-05/CA-06 · depende de T13 (mismos formularios)
+  - Cerrar los huecos de mapeo de errores en ambos formularios: error que no
+    es `AuthError` → mensaje genérico y amable (no el de credenciales);
+    `missing_fields` en login → mensaje del backend en el banner; login
+    encadenado caído tras registro exitoso → banner de cuenta creada sin
+    token persistido; cualquier `AuthError` no cubierto → mensaje genérico y
+    amable. Extender `tests/auth/signin-form.test.tsx` y
+    `tests/auth/signup-form.test.tsx` con estos casos.
+  - Hecho cuando: cada caso imprevisto renderiza un banner con texto en
+    español, genérico y amable (nunca técnico ni vacío), el mensaje de
+    credenciales queda reservado a credenciales/API Key, y `pnpm test` y
+    `pnpm check` están en verde.
+
 ---
 
 ## Registro de decisiones (2026-10-02)
@@ -112,3 +167,18 @@
   estructura mínima (YAGNI).
 - **T7 eliminada (2026-10-02)**: el hook `useAuth` se descarta (YAGNI); la UI
   consume `useAuthStore` directamente.
+- **Cambio v1.3 aprobado (2026-10-04)** — decisiones del usuario ya tomadas,
+  ejecutadas como T12–T15:
+  - **Login sin reglas de fortaleza**: solo contraseña no vacía; las 4 reglas
+    viven solo en el registro (no bloquear credenciales válidas).
+  - **Correo con `@` como mínimo visible**: «Ingresa un correo electrónico
+    válido»; sin regex completa de formato.
+  - **Coherencia botón/envío**: un único predicado compartido
+    (`canSubmitRegister`/`canSubmitLogin`); cero desajuste entre botón y
+    submit.
+  - **Identidad del sidebar desde la sesión**: `nombre` → derivado del
+    correo → fallback «Invitado» sin línea de correo; iniciales derivadas.
+  - **Errores imprevistos**: mensaje en español genérico y amable, nunca
+    técnico ni vacío; el de credenciales reservado a credenciales/API Key.
+  - **Limpieza de comentarios (RNF-06 exhaustivo)**: reexpresar como
+    descripción funcional en español, sin perder la información útil.

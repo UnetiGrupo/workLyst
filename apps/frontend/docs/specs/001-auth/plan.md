@@ -2,7 +2,10 @@
 
 > Generado: 2026-10-01 · Actualizado: 2026-10-02 (revisión QA · Cambio v1.1:
 > estructura mínima de la capa de auth · Cambio v1.2: sin hook, la UI consume
-> el store directamente).
+> el store directamente) · 2026-10-04 (Cambio v1.3: mínimo obligatorio de los
+> botones con coherencia botón/envío, identidad real en la barra lateral,
+> mensajes para flujos no previstos y limpieza de comentarios con referencias
+> a la spec).
 > Aprobado por el usuario con estructura mínima de archivos (Zustand) y tests en
 > Vitest. Espeja la decisión del alcance (docs/scope.md): contrato + adaptadores,
 > mock por defecto.
@@ -47,6 +50,22 @@ Archivos a modificar (solo consumen el store; la lógica sale de ellos):
 Nota (Cambio v1.2): sin provider ni hook envoltorio — Zustand es estado global
 sin contexto; la UI consume `useAuthStore` directamente.
 
+Nota (Cambio v1.3, 2026-10-04): dos módulos puros nuevos y tres archivos a
+modificar:
+
+| Archivo | Responsabilidad | RF |
+|---|---|---|
+| `src/lib/auth/form-validation.ts` | Predicados puros de envío mínimo: `canSubmitRegister` (campos llenos tras recorte + correo con `@` + 4 reglas) y `canSubmitLogin` (campos llenos + correo con `@` + contraseña no vacía, sin reglas) | RF-01, RF-03 |
+| `src/lib/auth/user-display.ts` | Identidad visible pura: `displayName` (`nombre` → parte local del correo capitalizada → «Invitado») e `displayInitials` | RF-07 |
+
+Se modifican: `signin-form.tsx` y `signup-form.tsx` (botón deshabilitado hasta
+el mínimo con el mismo predicado que el envío + mensajes para flujos no
+previstos), `src/components/layout/sidebar.tsx` (identidad real de la sesión en
+lugar de los datos fijos "Orlando Lopez"/"orlando@worklyst.com"), y se limpian
+los comentarios con referencias a la spec en `src/lib/api.ts`,
+`src/lib/auth/token.ts` y `tests/auth/{api,token,password}.test.ts` (RNF-06,
+sin perder la información útil: se reexpresa como descripción funcional).
+
 Dependencias aprobadas por el usuario: `zustand` (runtime) y `vitest` (dev).
 Constitución, principio 1. **Actualización 2026-10-02**: se aprueban además las
 dependencias de test de componente `jsdom`, `@testing-library/react` y
@@ -59,25 +78,30 @@ queda diferido (ver sección 6.2). El plan se cierra con la **Opción B**.
 validatePasswordRules(password) → { minLength, upperAndLower, number, special, level: 0..3 }
 isTokenValid(token: string, now: Date) → boolean   // decodifica JWT; false si exp/corrupto/malformado
 sanitizeText(text: string) → string                // trim (excepto password)
-canSubmitRegister(data: RegisterData, rules) → boolean
-canSubmitLogin(credentials: Credentials) → boolean
+canSubmitRegister(data: RegisterData) → boolean     // Cambio v1.3: campos llenos + correo con "@" + 4 reglas (usa validatePasswordRules)
+canSubmitLogin(credentials: Credentials) → boolean  // Cambio v1.3: campos llenos + correo con "@" + contraseña no vacía (sin reglas)
+displayName(user: AuthUser | null) → string          // Cambio v1.3: nombre → parte local del correo → "Invitado"
+displayInitials(name: string) → string               // Cambio v1.3: iniciales de las dos primeras palabras (una palabra → su inicial)
 ```
 
 Cero IO y cero React: 100% testeables con Vitest.
 
 ## 3. Algoritmos (pseudocódigo)
 
-**Registro (RF-01, CA-01..04):**
+**Registro (RF-01, CA-01..06):**
 ```
 register(data):
   data = sanitize(data)                 // trim fullName/email; NO password
-  rules = validatePasswordRules(data.password)
-  if !canSubmitRegister(data, rules) → abort, errores por campo (CA-01)
+  if !canSubmitRegister(data) → abort, errores por campo (CA-01)
+      // el botón comparte este predicado: nunca habilitado con envío inválido
   usuario = data.fullName               // mapeo fullName → usuario (adaptador)
   await adapter.register(usuario, data.email, data.password)   // 201
       // 400 "El usuario ya existe" → error campo email (CA-02), conservar datos
       // 400 "Todos los campos son obligatorios" → error general (CA-04)
+      // fallo no previsto (no-AuthError, código no cubierto) → genérico amable (CA-06)
   session = await adapter.login(data.email, data.password)     // CA-03 encadenado
+      // CA-05: si falla → sin token, estado guest, banner "cuenta creada,
+      // inicia sesión manualmente" (amable, en español)
   store: set token + user → redirect "/"
 ```
 
@@ -85,13 +109,16 @@ register(data):
 ```
 login(credentials):
   credentials = sanitize(credentials)
-  if !canSubmitLogin(credentials) → abort, errores por campo
+  if !canSubmitLogin(credentials) → abort, errores por campo (CA-04)
+      // sin reglas de fortaleza: solo contraseña no vacía (decisión del usuario)
   status = "loading"; botón deshabilitado (CA-03)
   session = await adapter.login(credentials)
   store: set token + user; persist token → redirect "/"
   catch invalid_credentials|api_key → banner genérico (CA-01, CA-02)
   catch rate_limited → banner con mensaje del backend (429, CL-06)
+  catch missing_fields → banner con mensaje del backend (CA-05)
   catch network → banner de reintento, conservar datos (CL-02, CL-05)
+  catch unknown|no-AuthError → banner genérico amable (CA-06, CL-08)
 ```
 
 **Recuperar sesión al arrancar (RF-04):**
@@ -114,6 +141,14 @@ antes de renderizar /auth/signin|signup:
 logout():
   try: adapter.logout(token)     // si falla, se ignora y continúa (CA-01)
   storage.clear(); store reset; redirect "/auth/signin"
+```
+
+**Identidad del miembro en la barra lateral (RF-07, Cambio v1.3):**
+```
+sidebar(user = store.user):
+  name = displayName(user)      // nombre → parte local del correo → "Invitado"
+  initials = displayInitials(name)
+  email = user?.email           // sin sesión → no se renderiza la línea de correo
 ```
 
 ## 4. Selección de adaptador y desviación del patrón de scope.md
@@ -148,8 +183,15 @@ backend). `api`/`real` exigen `VITE_API_URL` y `VITE_API_KEY`.
 - **Banner** sobre el formulario para el error genérico de login (credenciales,
   API Key, red, 429). RF-03
 - **Botón**: `idle → loading ("Iniciando sesión…" / "Creando cuenta…") →
-  error → éxito (redirige)`; deshabilitado mientras envía y si la validación
-  no pasa. RF-01, RF-02, RF-03
+  error → éxito (redirige)`; deshabilitado mientras envía y hasta cumplir el
+  mínimo obligatorio (registro: campos + `@` + 4 reglas; login: campos + `@` +
+  contraseña no vacía), siempre con el mismo predicado que el envío. El correo
+  sin `@` muestra «Ingresa un correo electrónico válido» junto al campo.
+  RF-01, RF-02, RF-03
+- **Barra lateral (Cambio v1.3)**: chip con identidad de la sesión — nombre
+  visible (`nombre`, o derivado del correo; sin sesión «Invitado»), correo
+  real (oculto sin sesión) e iniciales derivadas; sin datos fijos de maqueta.
+  RF-07
 - **Sociales**: `disabled` + indicación "Próximamente". RF-06
 - **Link forgot-password y toggle recuérdame**: visibles, sin acción (el link
   sin `href` ni atributo inválido).
@@ -171,9 +213,17 @@ Config: `vite.config.ts` añade `test` con resolve alias `#` → `src`. Script
 | RF-04 | `token.test.ts` | `isTokenValid`: vigente / expirado / corrupto / malformado, con `now` fijo; `sanitizeText`; `restoreSession` con localStorage |
 | RF-05 | `auth-store.test.ts` | logout limpia store y storage aunque `adapter.logout` rechace |
 | RF-06 | `signin-form.test.tsx` / `signup-form.test.tsx` | botones sociales deshabilitados con "Próximamente" (test de componente, `@testing-library/react`) |
+| RF-01/RF-03 (Cambio v1.3) | `form-validation.test.ts` | `canSubmitRegister`/`canSubmitLogin`: campos vacíos (con recorte), correo con/sin `@`, 4 reglas solo en registro, contraseña no vacía en login |
+| RF-07 (Cambio v1.3) | `user-display.test.ts` | `displayName` (con `nombre`, sin `nombre` → derivado del correo, sin sesión → «Invitado») e `displayInitials` (dos palabras, una palabra) |
+| RF-01 CA-01/CA-05/CA-06 · RF-03 CA-04/CA-05/CA-06 (Cambio v1.3) | `signin-form.test.tsx` / `signup-form.test.tsx` (extensión) | botón nace deshabilitado y se habilita exactamente al cumplir el mínimo; error no-`AuthError` → genérico amable (no el de credenciales); `missing_fields` en login → mensaje del backend; login encadenado caído en registro → banner de cuenta creada |
+| RF-07 (Cambio v1.3) | `tests/layout/sidebar.test.tsx` | chip del sidebar con nombre real, derivado del correo y fallback «Invitado» sin correo, montado con el store en sus tres estados |
 
 Tests primero (rojo) por tarea, siguiendo la skill sdd. Los de store fuerzan
 `VITE_API_MODE=mock` en el test setup.
+
+Nota (Cambio v1.3): `tests/layout/` espeja el área `src/components/layout/`
+del componente bajo prueba (la responsabilidad de área justifica la carpeta,
+RNF-05); crecerá con los tests de layout de la fase 1.
 
 **Redistribución de tests del adaptador (Cambio v1.1)**: con la estructura de
 dos archivos, el contrato/adaptador real y la fábrica se prueban en
@@ -249,14 +299,45 @@ Opciones evaluadas (tabla como histórico de la decisión):
     la UI. *Descartado el hook `useAuth`* (`src/hooks/use-auth.ts`): un
     envoltorio mínimo que solo reexportaba el store, indirección sin valor
     propio (YAGNI, RNF-05).
+13. **Un único predicado de envío compartido por botón y submit (Cambio v1.3,
+    aprobado)** — `canSubmitRegister`/`canSubmitLogin` puras en
+    `src/lib/auth/form-validation.ts`, consumidas por el botón (suscripción a
+    los valores del formulario) y como guarda de `onSubmit`. *Descartado
+    depender solo de `canSubmit` de TanStack Form*: no bloquea campos vacíos
+    intactos al montar y mezcla validez con estado de envío (riesgo de
+    desajuste botón/envío, justo lo que el cambio prohíbe). *Descartados
+    helpers locales en cada componente*: duplicarían la regla del correo y no
+    serían testeables como funciones puras (constitución, principios 3 y 4).
+14. **Validación de correo = contiene `@`** (decisión del usuario) — el mínimo
+    obligatorio visible es que el correo contenga `@`; el error de campo es
+    «Ingresa un correo electrónico válido». *Descartada una regex de formato
+    completo (RFC)*: añadiría bloqueos sin valor para el mínimo obligatorio.
+15. **Login sin reglas de fortaleza** (decisión explícita del usuario) — el
+    login exige contraseña no vacía; las 4 reglas viven solo en el registro
+    (RF-02 ya lo acotaba). *Descartado exigirlas también al login*: bloquearía
+    credenciales válidas creadas fuera del flujo de registro de la UI.
+16. **Identidad visible como funciones puras** `displayName`/`displayInitials`
+    en `src/lib/auth/user-display.ts` (Cambio v1.3, aprobado) — *descartado
+    derivar dentro del sidebar*: la UI solo renderiza (constitución, principio
+    3). *Descartado pedir el nombre al backend ahora*: el endpoint `/me`
+    sigue como encargo externo y la derivación del correo cubre el hueco
+    (RF-07 CA-02).
+17. **Mensajes de flujo imprevisto cerrados en el mapeo de cada formulario**
+    (Cambio v1.3, aprobado) — cada formulario conserva su helper de mapeo y se
+    cierran los huecos: no-`AuthError` → genérico amable (nunca el de
+    credenciales), `missing_fields` en login → mensaje del backend, login
+    encadenado caído en registro → banner de cuenta creada. *Descartado un
+    catálogo global de mensajes*: los helpers ya existen y son presentación
+    por formulario (precedente de `isPasswordStrong`).
 
 ## 8. Mapeo de RF cubiertos
 
 | RF | Archivos | Tests |
 |---|---|---|
-| RF-01 | api, auth-api (contrato + real + fábrica), auth-mock, store, signup-form, routes | auth-store.test.ts, signup-form.test.tsx |
-| RF-02 | lib/auth/password, signup-form | password.test.ts, signup-form.test.tsx |
-| RF-03 | api, auth-api, auth-mock, store, signin-form, routes | auth-store.test.ts, signin-form.test.tsx |
+| RF-01 | api, auth-api (contrato + real + fábrica), auth-mock, store, form-validation, signup-form, routes | auth-store.test.ts, form-validation.test.ts, signup-form.test.tsx |
+| RF-02 | lib/auth/password, form-validation, signup-form | password.test.ts, form-validation.test.ts, signup-form.test.tsx |
+| RF-03 | api, auth-api, auth-mock, store, form-validation, signin-form, routes | auth-store.test.ts, form-validation.test.ts, signin-form.test.tsx |
 | RF-04 | lib/auth/token, store, __root, routes auth | token.test.ts, auth-store.test.ts |
 | RF-05 | api, auth-api, auth-mock, store, header/logout UI | auth-store.test.ts |
 | RF-06 | signin/signup social buttons | signin-form.test.tsx / signup-form.test.tsx (componente) |
+| RF-07 | user-display, sidebar | user-display.test.ts, sidebar.test.tsx |

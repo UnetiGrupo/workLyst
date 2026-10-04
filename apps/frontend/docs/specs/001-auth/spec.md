@@ -1,6 +1,6 @@
 # Spec 001 — Auth
 
-Estado: aprobada — Cambios v1.1 y v1.2 incorporados (2026-10-02)
+Estado: aprobada — Cambios v1.1, v1.2 y v1.3 incorporados (2026-10-04)
 
 > Fase 0 del alcance (docs/scope.md). Primera spec de la v2. La interfaz ya está
 > maquetada; esta spec cubre la lógica de conexión con el backend y las
@@ -57,8 +57,15 @@ Contrato con el backend (`POST /api/auth/register`):
 - Error `400` con dos causas distintas (ver CA-02 y CA-04), distinguibles por
   `mensaje`.
 
-- CA-01: SI algún campo está vacío o inválido, ENTONCES no se enviará ninguna
-  petición y se mostrará el error junto al campo correspondiente.
+- CA-01: SI algún campo obligatorio está vacío (tras recortar espacios en
+  `fullName`/`email`), o el correo no contiene `@`, o la contraseña no cumple
+  las 4 reglas, ENTONCES no se enviará ninguna petición, el botón de envío
+  permanecerá deshabilitado y se mostrará el error junto al campo
+  correspondiente (campo vacío: «Este campo es requerido»; correo sin `@`:
+  «Ingresa un correo electrónico válido»). El predicado de «listo para
+  enviar» es único y gobierna a la vez el botón y el envío: no puede haber
+  botón habilitado con un envío que abortaría, ni envío bloqueado con el
+  botón habilitado.
 - CA-02: SI el backend responde `400` con `mensaje === "El usuario ya existe"`,
   ENTONCES se mostrará el error junto al campo de correo y el formulario
   conservará los datos ingresados.
@@ -70,6 +77,16 @@ Contrato con el backend (`POST /api/auth/register`):
   general del formulario; no se asociará al campo de correo. La distinción
   entre CA-02 y CA-04 se hace por el `mensaje` de la respuesta, documentado
   como contrato del adaptador.
+- CA-05: SI la cuenta se crea (`201`) pero el login encadenado falla, ENTONCES
+  no se guardará ningún token, el estado volverá a visitante y se mostrará en
+  el banner un mensaje en español, amable, que informe que la cuenta se creó
+  pero no se pudo iniciar sesión automáticamente e invite a iniciar sesión
+  manualmente (p. ej. «Tu cuenta se creó, pero no pudimos iniciar sesión
+  automáticamente. Intenta iniciar sesión con tu correo y contraseña.»).
+- CA-06: SI el registro falla por una causa no prevista (error inesperado del
+  adaptador, `AuthError` con código no cubierto), ENTONCES se mostrará un
+  mensaje genérico y amable en español; nunca un error técnico ni un banner
+  vacío.
 
 **RF-02: Validación de contraseña (solo cliente, solo registro)**
 CUANDO el visitante escriba una contraseña en el formulario de registro, EL
@@ -112,6 +129,21 @@ Contrato con el backend (`POST /api/auth/login`):
   el mismo mensaje de error genérico (el usuario no debe saber detalles internos).
 - CA-03: MIENTRAS la petición está en curso, EL SISTEMA mostrará el estado de
   carga y deshabilitará el botón de envío.
+- CA-04: EL SISTEMA mantendrá el botón de envío deshabilitado hasta que ambos
+  campos estén llenos (tras recorte) y el correo contenga `@`. La contraseña
+  solo se exige no vacía: las 4 reglas de fortaleza NO se aplican al login
+  (decisión explícita del usuario: no bloquear credenciales válidas). El
+  predicado de «listo para enviar» es único y gobierna a la vez el botón y el
+  envío: sin desajuste entre ambos.
+- CA-05: SI el backend responde `400` (campos faltantes) pese a la validación
+  local, ENTONCES se mostrará su mensaje en español en el banner; no el
+  mensaje de credenciales incorrectas.
+- CA-06: SI el login falla por una causa no prevista (error inesperado del
+  adaptador, `AuthError` con código no cubierto), ENTONCES se mostrará un
+  mensaje genérico y amable en español, distinto del mensaje de credenciales;
+  nunca un error técnico ni un banner vacío. El mensaje de credenciales
+  incorrectas queda reservado a los fallos de credenciales y de API Key
+  (CA-01/CA-02).
 
 **RF-04: Sesión multiplataforma**
 EL SISTEMA guardará el token de sesión en el almacenamiento de sesión de la
@@ -146,6 +178,23 @@ Contrato con el backend (`POST /api/auth/logout`): entrada
 EL SISTEMA mostrará los botones de Google y GitHub deshabilitados con una
 indicación de próxima disponibilidad (no hay OAuth en el backend).
 
+**RF-07: Identidad real del miembro en la interfaz**
+CUANDO se muestre la barra lateral, EL SISTEMA mostrará la identidad del
+usuario derivada de la sesión (nombre visible, correo e iniciales); sin datos
+fijos de maqueta.
+
+- CA-01: SI la sesión incluye `nombre` (login o registro), ENTONCES el nombre
+  visible será ese `nombre` y el correo será el de la sesión.
+- CA-02: SI la sesión no incluye `nombre` (o este está vacío tras recorte; p.
+  ej. sesión restaurada desde el token, que solo contiene `id` y `email`),
+  ENTONCES el nombre visible se derivará del correo: la parte local (antes de
+  la `@`) con la primera letra en mayúscula.
+- CA-03: SI no hay sesión, ENTONCES el nombre visible será «Invitado» y no se
+  mostrará la línea de correo.
+- CA-04: Las iniciales serán las primeras letras (en mayúsculas) de la primera
+  y segunda palabra del nombre visible; con una sola palabra, solo su primera
+  letra.
+
 ## Requisitos no funcionales
 
 | ID     | Requisito                                                                            |
@@ -172,6 +221,15 @@ indicación de próxima disponibilidad (no hay OAuth en el backend).
 - **CL-06**: Rate limit del backend (`429`) en register/login → se muestra el
   `mensaje` del backend en español ("Demasiados intentos de inicio de sesión,
   por favor intente nuevamente después de 15 minutos"), conservando los datos.
+- **CL-07**: Registro creado (`201`) pero login encadenado falla → sin token
+  persistido, estado visitante y banner informando que la cuenta se creó e
+  invitando a iniciar sesión manualmente (RF-01 CA-05).
+- **CL-08**: El adaptador lanza un error que no es `AuthError` o con código no
+  cubierto (bug o flujo imprevisto) en login o registro → mensaje genérico y
+  amable en español; nunca detalle técnico ni banner vacío (RF-01 CA-06,
+  RF-03 CA-06).
+- **CL-09**: Barra lateral sin sesión → nombre visible «Invitado» y sin línea
+  de correo (RF-07 CA-03).
 
 ## Fuera de alcance (esta versión)
 
@@ -199,6 +257,19 @@ indicación de próxima disponibilidad (no hay OAuth en el backend).
    rate limit) en un banner genérico sobre el formulario.
 6. Los encargos al backend quedan documentados (OAuth, reset, `/me`, refresh,
    validación de contraseña en servidor).
+7. Los botones de registro y login permanecen deshabilitados hasta su mínimo
+   obligatorio (registro: campos llenos + correo con `@` + 4 reglas; login:
+   campos llenos + correo con `@` + contraseña no vacía) y el botón y el
+   envío nunca se desajustan.
+8. La barra lateral muestra la identidad real de la sesión (nombre, correo e
+   iniciales), con derivación del nombre desde el correo cuando falta y
+   fallback «Invitado» sin sesión.
+9. Todo error imprevisto (error inesperado del adaptador, código no cubierto,
+   login encadenado caído tras registro) muestra un mensaje en español,
+   genérico y amable; nunca un error técnico ni un banner vacío.
+10. Ningún comentario de código o tests referencia identificadores de la spec
+    (RF/RNF/CA/CL): la información útil se conserva reexpresada como
+    descripción funcional en español (RNF-06 aplicado de forma exhaustiva).
 
 ## Contrato del adaptador (resumen)
 
@@ -287,3 +358,34 @@ La UI consume el store de sesión directamente (`useAuthStore`); se descarta el
 hook intermedio `useAuth` por ser una indirección sin valor propio (YAGNI,
 coherente con RNF-05). No se crea `src/hooks/use-auth.ts` ni archivo
 equivalente.
+
+## Cambio v1.3 (2026-10-04)
+
+Cambio de requisitos aprobado por el usuario, con sus decisiones ya tomadas. A
+diferencia de v1.1 y v1.2, este cambio SÍ modifica requisitos funcionales:
+RF-01 (CA-01 reescrito; CA-05 y CA-06 nuevas), RF-03 (CA-04, CA-05 y CA-06
+nuevas), RF-07 nuevo, casos límite CL-07–CL-09 y criterios de finalización
+7–10. RNF-06 se aplica de forma exhaustiva (punto 1).
+
+1. **Comentarios sin identificadores de spec (aplicación exhaustiva de
+   RNF-06)**: ningún comentario de código o tests referenciará RF/RNF/CA/CL;
+   la información útil se conserva reexpresada como descripción funcional en
+   español. Residuos conocidos: `src/lib/api.ts`, `src/lib/auth/token.ts` y
+   `tests/auth/{api,token,password}.test.ts`.
+2. **Identidad real en la barra lateral (RF-07)**: el sidebar consume la
+   sesión (`useAuthStore`): nombre visible desde `nombre` o derivado del
+   correo, correo real, iniciales derivadas y fallback «Invitado» sin sesión.
+   Sustituye a los datos fijos «Orlando Lopez»/«orlando@worklyst.com».
+3. **Botones deshabilitados hasta el mínimo obligatorio (RF-01 CA-01,
+   RF-03 CA-04)**: un único predicado de «listo para enviar» compartido por el
+   botón y el envío (cero desajuste). Registro: campos llenos + correo con `@`
+   + 4 reglas. Login: campos llenos + correo con `@` + contraseña no vacía
+   (las 4 reglas NO se aplican al login: decisión explícita del usuario para
+   no bloquear credenciales válidas).
+4. **Errores en cualquier flujo no previsto (RF-01 CA-05/CA-06,
+   RF-03 CA-05/CA-06, CL-07/CL-08)**: todo caso imprevisto (error inesperado
+   del adaptador, código desconocido, login encadenado caído tras registro,
+   `400` de campos en login) muestra un mensaje de usuario en español,
+   genérico y amable; nunca un error técnico ni un banner vacío. El mensaje de
+   credenciales incorrectas queda reservado a los fallos de credenciales y de
+   API Key.
