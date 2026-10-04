@@ -2,7 +2,11 @@ import { useForm } from "@tanstack/react-form";
 import { ArrowRight, Check, Eye, EyeOff, Mail, User, X } from "lucide-react";
 import { useState } from "react";
 import { Button } from "#/components/common/button";
+import { GitHub, Google } from "#/components/common/icons";
 import { Input } from "#/components/common/input";
+import { validatePasswordRules } from "#/lib/auth/password";
+import { AuthError } from "#/lib/auth/types";
+import { useAuthStore } from "#/stores/auth-store";
 
 const FORM_FIELDS = [
 	{
@@ -21,27 +25,16 @@ const FORM_FIELDS = [
 	},
 ] as const;
 
+const SOCIAL_BUTTONS = [
+	{ icon: Google, text: "Google" },
+	{ icon: GitHub, text: "GitHub" },
+] as const;
+
 const PASSWORD_RULES = [
-	{
-		key: "minLength",
-		label: "Mínimo 8 caracteres",
-		test: (v: string) => v.length >= 8,
-	},
-	{
-		key: "uppercase",
-		label: "Mayúscula y minúscula",
-		test: (v: string) => /[A-Z]/.test(v) && /[a-z]/.test(v),
-	},
-	{
-		key: "number",
-		label: "Al menos un número (0-9)",
-		test: (v: string) => /\d/.test(v),
-	},
-	{
-		key: "special",
-		label: "Carácter especial (!@#$%^&*)",
-		test: (v: string) => /[!@#$%^&*]/.test(v),
-	},
+	{ key: "minLength", label: "Mínimo 8 caracteres" },
+	{ key: "upperAndLower", label: "Mayúscula y minúscula" },
+	{ key: "number", label: "Al menos un número (0-9)" },
+	{ key: "special", label: "Carácter especial (!@#$%^&*)" },
 ] as const;
 
 const SECURITY_LEVELS = [
@@ -51,18 +44,26 @@ const SECURITY_LEVELS = [
 	{ label: "FUERTE", color: "bg-emerald-500" },
 ] as const;
 
-function getSecurityLevel(password: string): number {
-	if (!password) return 0;
-	const passedRules = PASSWORD_RULES.filter((rule) =>
-		rule.test(password),
-	).length;
-	if (passedRules <= 1) return 1;
-	if (passedRules <= 2) return 2;
-	return 3;
+const REGISTER_ERROR_MESSAGE =
+	"No pudimos crear tu cuenta. Inténtalo de nuevo.";
+
+function isPasswordStrong(password: string): boolean {
+	const rules = validatePasswordRules(password);
+	return (
+		rules.minLength && rules.upperAndLower && rules.number && rules.special
+	);
+}
+
+// El `missing_fields`, el rate limit y los fallos de red muestran el mensaje
+// (en español) del adaptador; el resto usa un mensaje genérico.
+function toRegisterErrorMessage(error: unknown): string {
+	return error instanceof AuthError ? error.message : REGISTER_ERROR_MESSAGE;
 }
 
 export function SignupForm() {
 	const [showPassword, setShowPassword] = useState(false);
+	const [bannerError, setBannerError] = useState<string | null>(null);
+	const [emailError, setEmailError] = useState<string | null>(null);
 
 	const form = useForm({
 		defaultValues: {
@@ -71,12 +72,61 @@ export function SignupForm() {
 			password: "",
 		},
 		onSubmit: async ({ value }) => {
-			console.log("Form submitted:", value);
+			setBannerError(null);
+			setEmailError(null);
+			if (!isPasswordStrong(value.password)) return;
+
+			try {
+				await useAuthStore.getState().register(value);
+			} catch (error) {
+				if (error instanceof AuthError && error.code === "duplicate_email") {
+					setEmailError(error.message);
+					return;
+				}
+				setBannerError(toRegisterErrorMessage(error));
+			}
 		},
 	});
 
 	return (
 		<div className="flex flex-col gap-6 md:gap-4 2xl:gap-6 w-full max-w-lg">
+			<div className="flex flex-col gap-2 w-full">
+				<div className="flex gap-3 w-full">
+					{SOCIAL_BUTTONS.map((btn) => (
+						<Button
+							key={btn.text}
+							variant="brand"
+							disabled
+							title="Próximamente"
+							className="flex-1 disabled:opacity-60 disabled:cursor-not-allowed"
+						>
+							<btn.icon className="size-4" />
+							<span>{btn.text}</span>
+						</Button>
+					))}
+				</div>
+				<p className="text-xs text-worklyst-text-sub text-center">
+					Próximamente
+				</p>
+			</div>
+
+			<div className="flex items-center gap-4 w-full">
+				<div className="flex-1 h-px bg-worklyst-border" />
+				<span className="text-xs text-worklyst-text-sub font-mono font-medium whitespace-nowrap">
+					O REGÍSTRATE CON TU CORREO
+				</span>
+				<div className="flex-1 h-px bg-worklyst-border" />
+			</div>
+
+			{bannerError && (
+				<div
+					role="alert"
+					className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600"
+				>
+					{bannerError}
+				</div>
+			)}
+
 			<form
 				onSubmit={(e) => {
 					e.preventDefault();
@@ -103,9 +153,15 @@ export function SignupForm() {
 								placeholder={field.placeholder}
 								icon={field.icon}
 								value={fieldApi.state.value}
-								onChange={(e) => fieldApi.handleChange(e.target.value)}
+								onChange={(e) => {
+									if (field.name === "email") setEmailError(null);
+									fieldApi.handleChange(e.target.value);
+								}}
 								onBlur={() => fieldApi.handleBlur()}
-								error={fieldApi.state.meta.errors[0]}
+								error={
+									(field.name === "email" ? emailError : null) ??
+									fieldApi.state.meta.errors[0]
+								}
 							/>
 						)}
 					</form.Field>
@@ -121,8 +177,8 @@ export function SignupForm() {
 					}}
 				>
 					{(fieldApi) => {
-						const securityLevel = getSecurityLevel(fieldApi.state.value);
-						const securityInfo = SECURITY_LEVELS[securityLevel];
+						const rules = validatePasswordRules(fieldApi.state.value);
+						const securityInfo = SECURITY_LEVELS[rules.level];
 
 						return (
 							<div className="flex flex-col gap-3">
@@ -164,7 +220,7 @@ export function SignupForm() {
 											<div
 												key={level.label}
 												className={`h-1 flex-1 rounded-full transition-colors ${
-													index <= securityLevel
+													index <= rules.level
 														? securityInfo.color
 														: "bg-worklyst-border"
 												}`}
@@ -178,7 +234,7 @@ export function SignupForm() {
 
 									<div className="hidden md:grid grid-cols-2 gap-1.5 2xl:gap-2">
 										{PASSWORD_RULES.map((rule) => {
-											const isValid = rule.test(fieldApi.state.value);
+											const isValid = rules[rule.key];
 											return (
 												<div key={rule.key} className="flex items-center gap-2">
 													<div
@@ -218,12 +274,20 @@ export function SignupForm() {
 				</form.Field>
 
 				<form.Subscribe
-					selector={(state) => [state.canSubmit, state.isSubmitting]}
+					selector={(state) =>
+						[
+							state.canSubmit,
+							state.isSubmitting,
+							state.values.password,
+						] as const
+					}
 				>
-					{([canSubmit, isSubmitting]) => (
+					{([canSubmit, isSubmitting, password]) => (
 						<Button
 							type="submit"
-							disabled={!canSubmit || isSubmitting}
+							disabled={
+								!canSubmit || isSubmitting || !isPasswordStrong(password)
+							}
 							className="w-full flex items-center justify-center gap-2"
 						>
 							{isSubmitting ? (

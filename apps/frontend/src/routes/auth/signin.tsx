@@ -1,22 +1,24 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { AuthBackground } from "#/components/auth/auth-background";
 import { AuthFooter } from "#/components/auth/auth-footer";
 import { AuthHeader } from "#/components/auth/auth-header";
 import { AuthHero } from "#/components/auth/auth-hero";
 import { SigninForm } from "#/components/auth/signin-form";
-import { Button } from "#/components/common/button";
-import { GitHub, Google } from "#/components/common/icons";
-
-const SOCIAL_BUTTONS = [
-	{ icon: Google, text: "Google" },
-	{ icon: GitHub, text: "GitHub" },
-] as const;
+import { useAuthStore } from "#/stores/auth-store";
 
 export const Route = createFileRoute("/auth/signin")({
 	component: RouteComponent,
 });
 
 function RouteComponent() {
+	const isAuthenticated = useAuthStore(
+		(state) => state.status === "authenticated",
+	);
+
+	if (isAuthenticated) {
+		return <Navigate to="/" />;
+	}
+
 	return (
 		<main className="flex h-dvh w-full">
 			<AuthBackground>
@@ -57,23 +59,6 @@ function RouteComponent() {
 							</p>
 						</div>
 					</header>
-
-					<div className="flex gap-3 w-full">
-						{SOCIAL_BUTTONS.map((btn) => (
-							<Button key={btn.text} variant="brand" className="flex-1">
-								<btn.icon className="size-4" />
-								<span>{btn.text}</span>
-							</Button>
-						))}
-					</div>
-
-					<div className="flex items-center gap-4 w-full">
-						<div className="flex-1 h-px bg-worklyst-border" />
-						<span className="text-xs text-worklyst-text-sub font-mono font-medium whitespace-nowrap">
-							O INICIA SESIÓN CON TU CORREO
-						</span>
-						<div className="flex-1 h-px bg-worklyst-border" />
-					</div>
 
 					<SigninForm />
 				</div>

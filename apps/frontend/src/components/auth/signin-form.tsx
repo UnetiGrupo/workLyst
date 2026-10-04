@@ -2,7 +2,10 @@ import { useForm } from "@tanstack/react-form";
 import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 import { useState } from "react";
 import { Button } from "#/components/common/button";
+import { GitHub, Google } from "#/components/common/icons";
 import { Input } from "#/components/common/input";
+import { AuthError } from "#/lib/auth/types";
+import { useAuthStore } from "#/stores/auth-store";
 
 const FORM_FIELDS = [
 	{
@@ -21,8 +24,31 @@ const FORM_FIELDS = [
 	},
 ] as const;
 
+const SOCIAL_BUTTONS = [
+	{ icon: Google, text: "Google" },
+	{ icon: GitHub, text: "GitHub" },
+] as const;
+
+const LOGIN_ERROR_MESSAGE =
+	"Correo o contraseña incorrectos. Verifica tus datos e inténtalo de nuevo.";
+
+// El rate limit y los fallos de red/desconocidos muestran el mensaje del backend;
+// credenciales y API Key comparten el mensaje genérico (no se filtra detalle).
+function toLoginErrorMessage(error: unknown): string {
+	if (
+		error instanceof AuthError &&
+		(error.code === "rate_limited" ||
+			error.code === "network" ||
+			error.code === "unknown")
+	) {
+		return error.message;
+	}
+	return LOGIN_ERROR_MESSAGE;
+}
+
 export function SigninForm() {
 	const [showPassword, setShowPassword] = useState(false);
+	const [bannerError, setBannerError] = useState<string | null>(null);
 
 	const form = useForm({
 		defaultValues: {
@@ -30,12 +56,54 @@ export function SigninForm() {
 			password: "",
 		},
 		onSubmit: async ({ value }) => {
-			console.log("Login submitted:", value);
+			setBannerError(null);
+			try {
+				await useAuthStore.getState().login(value);
+			} catch (error) {
+				setBannerError(toLoginErrorMessage(error));
+			}
 		},
 	});
 
 	return (
 		<div className="flex flex-col gap-6 md:gap-4 2xl:gap-6 w-full max-w-lg">
+			<div className="flex flex-col gap-2 w-full">
+				<div className="flex gap-3 w-full">
+					{SOCIAL_BUTTONS.map((btn) => (
+						<Button
+							key={btn.text}
+							variant="brand"
+							disabled
+							title="Próximamente"
+							className="flex-1 disabled:opacity-60 disabled:cursor-not-allowed"
+						>
+							<btn.icon className="size-4" />
+							<span>{btn.text}</span>
+						</Button>
+					))}
+				</div>
+				<p className="text-xs text-worklyst-text-sub text-center">
+					Próximamente
+				</p>
+			</div>
+
+			<div className="flex items-center gap-4 w-full">
+				<div className="flex-1 h-px bg-worklyst-border" />
+				<span className="text-xs text-worklyst-text-sub font-mono font-medium whitespace-nowrap">
+					O INICIA SESIÓN CON TU CORREO
+				</span>
+				<div className="flex-1 h-px bg-worklyst-border" />
+			</div>
+
+			{bannerError && (
+				<div
+					role="alert"
+					className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600"
+				>
+					{bannerError}
+				</div>
+			)}
+
 			<form
 				onSubmit={(e) => {
 					e.preventDefault();
@@ -101,13 +169,9 @@ export function SigninForm() {
 							Recuérdame
 						</span>
 					</label>
-					<a
-						forgot-password
-						href="/auth/forgot-password"
-						className="text-sm text-primary-500 hover:text-primary-600 font-medium"
-					>
+					<span className="text-sm text-primary-500 font-medium">
 						¿Olvidaste tu contraseña?
-					</a>
+					</span>
 				</div>
 
 				<form.Subscribe
