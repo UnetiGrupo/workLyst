@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { api, toAuthError } from "#/lib/api";
 import { AuthError } from "#/lib/auth/types";
 
-// RF-01, RF-03, RF-05: cliente HTTP central y mapeo de errores a `AuthError`.
+// Cliente HTTP central y mapeo de los errores del backend a `AuthError`.
 // Los objetos de error imitan la forma de un AxiosError sin necesidad de red.
 
 /** Error de red: sin `response`, con `request`. */
@@ -14,7 +14,7 @@ function httpError(status: number, mensaje?: string) {
 }
 
 describe("toAuthError", () => {
-	// --- 400: desambiguado por `mensaje` (RF-01 CA-02 vs CA-04) ------------
+	// --- 400: desambiguado por el `mensaje` (duplicado vs. campos) ----------
 
 	it("maps 400 'El usuario ya existe' to duplicate_email", () => {
 		const error = toAuthError(httpError(400, "El usuario ya existe"));
@@ -40,7 +40,7 @@ describe("toAuthError", () => {
 		expect(error.message).toBe("El correo no es válido");
 	});
 
-	// --- 401 / 403: credenciales vs API Key (RF-03 CA-01/CA-02) -------------
+	// --- 401 / 403: credenciales vs. API Key --------------------------------
 
 	it("maps 401 'Credenciales inválidas' to invalid_credentials", () => {
 		const error = toAuthError(httpError(401, "Credenciales inválidas"));
@@ -69,7 +69,7 @@ describe("toAuthError", () => {
 		expect(error.message.toLowerCase()).not.toContain("x-api-key");
 	});
 
-	// --- 429: rate limit (CL-06) -------------------------------------------
+	// --- 429: límite de solicitudes -----------------------------------------
 
 	it("maps 429 to rate_limited using the backend message", () => {
 		const mensaje =
@@ -80,7 +80,7 @@ describe("toAuthError", () => {
 		expect(error.message).toBe(mensaje);
 	});
 
-	// --- Red (CL-02/CL-05) --------------------------------------------------
+	// --- Errores de red -----------------------------------------------------
 
 	it("maps a network error to network with status 0", () => {
 		const error = toAuthError(networkError);

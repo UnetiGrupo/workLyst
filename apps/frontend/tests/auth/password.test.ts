@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { validatePasswordRules } from "#/lib/auth/password";
 
-// RF-02: reglas de contraseña y nivel de seguridad (función pura, solo cliente).
+// Reglas de contraseña y nivel de seguridad (función pura, solo cliente).
 
 describe("validatePasswordRules", () => {
 	// --- Regla: minLength (longitud >= 8) ---------------------------------

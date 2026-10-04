@@ -5,8 +5,8 @@ import {
 	sanitizeText,
 } from "#/lib/auth/token";
 
-// RF-04: vigencia de token (función pura) y saneo de texto de entrada.
-// CL-04: se recortan `fullName`/`email`, nunca la contraseña.
+// Vigencia de token (función pura) y saneo de texto de entrada: se recortan
+// `fullName`/`email`, nunca la contraseña.
 
 /**
  * Codifica un objeto a base64url (sin padding), válido en Node y navegador.

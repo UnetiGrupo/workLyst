@@ -114,4 +114,75 @@ describe("SigninForm", () => {
 		const alert = await screen.findByRole("alert");
 		expect(alert.textContent).toContain(rateLimitMessage);
 	});
+
+	it("keeps the submit disabled until the email has an at sign and the password is filled", async () => {
+		const user = userEvent.setup();
+		render(<SigninForm />);
+
+		expect(submitButton().disabled).toBe(true);
+
+		await user.type(screen.getByLabelText("Correo Electrónico"), "demo");
+		expect(submitButton().disabled).toBe(true);
+		expect(screen.getByText("Ingresa un correo electrónico válido")).toBeTruthy();
+
+		await user.type(screen.getByLabelText("Correo Electrónico"), "@worklyst.com");
+		await user.type(screen.getByLabelText("Contraseña"), "weak");
+		expect(submitButton().disabled).toBe(false);
+	});
+
+	it("shows the backend message in the banner when the backend reports missing fields", async () => {
+		const user = userEvent.setup();
+		const message = "Todos los campos son obligatorios";
+		vi.spyOn(authService, "login").mockRejectedValue(
+			new AuthError("missing_fields", message, 400),
+		);
+		render(<SigninForm />);
+
+		await user.type(
+			screen.getByLabelText("Correo Electrónico"),
+			"demo@worklyst.com",
+		);
+		await user.type(screen.getByLabelText("Contraseña"), "Password1!");
+		await user.click(submitButton());
+
+		const alert = await screen.findByRole("alert");
+		expect(alert.textContent).toContain(message);
+		expect(alert.textContent).not.toContain("Correo o contraseña incorrectos");
+	});
+
+	it("shows a friendly generic banner when the failure is not an AuthError", async () => {
+		const user = userEvent.setup();
+		vi.spyOn(authService, "login").mockRejectedValue(new Error("boom"));
+		render(<SigninForm />);
+
+		await user.type(
+			screen.getByLabelText("Correo Electrónico"),
+			"demo@worklyst.com",
+		);
+		await user.type(screen.getByLabelText("Contraseña"), "Password1!");
+		await user.click(submitButton());
+
+		const alert = await screen.findByRole("alert");
+		expect(alert.textContent).toBeTruthy();
+		expect(alert.textContent).not.toContain("Correo o contraseña incorrectos");
+	});
+
+	it("shows a friendly generic banner for an uncovered AuthError code", async () => {
+		const user = userEvent.setup();
+		vi.spyOn(authService, "login").mockRejectedValue(
+			new AuthError("unknown", "Algo salió mal", 500),
+		);
+		render(<SigninForm />);
+
+		await user.type(
+			screen.getByLabelText("Correo Electrónico"),
+			"demo@worklyst.com",
+		);
+		await user.type(screen.getByLabelText("Contraseña"), "Password1!");
+		await user.click(submitButton());
+
+		const alert = await screen.findByRole("alert");
+		expect(alert.textContent).toBeTruthy();
+		expect(alert.textContent).not.toContain("Correo o contraseña incorrectos");
+	});
 });

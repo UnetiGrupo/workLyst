@@ -6,7 +6,7 @@ import { SignupForm } from "#/components/auth/signup-form";
 import { authService } from "#/lib/auth/auth-api";
 import { resetAuthMock } from "#/lib/auth/auth-mock";
 import { AuthError } from "#/lib/auth/types";
-import { useAuthStore } from "#/stores/auth-store";
+import { SESSION_TOKEN_KEY, useAuthStore } from "#/stores/auth-store";
 
 const VALID_REGISTER = {
 	fullName: "Ada Lovelace",
@@ -144,5 +144,77 @@ describe("SignupForm", () => {
 
 		const alert = await screen.findByRole("alert");
 		expect(alert.textContent).toContain(message);
+	});
+
+	it("keeps the submit disabled until the email has an at sign", async () => {
+		const user = userEvent.setup();
+		render(<SignupForm />);
+
+		expect(submitButton().disabled).toBe(true);
+
+		await user.type(
+			screen.getByLabelText("Nombre Completo"),
+			VALID_REGISTER.fullName,
+		);
+		await user.type(
+			screen.getByLabelText("Correo Electrónico de Trabajo"),
+			"ada.worklyst.com",
+		);
+		await user.type(
+			screen.getByLabelText("Contraseña Segura"),
+			VALID_REGISTER.password,
+		);
+
+		expect(screen.getByText("Ingresa un correo electrónico válido")).toBeTruthy();
+		expect(submitButton().disabled).toBe(true);
+	});
+
+	it("shows a friendly banner when the chained login fails after registering", async () => {
+		const user = userEvent.setup();
+		vi.spyOn(authService, "register").mockResolvedValue({
+			id: "9",
+			email: VALID_REGISTER.email,
+			nombre: VALID_REGISTER.fullName,
+		});
+		vi.spyOn(authService, "login").mockRejectedValue(
+			new AuthError("network", "sin conexión", 0),
+		);
+		render(<SignupForm />);
+
+		await fillValidForm(user);
+		await user.click(submitButton());
+
+		const alert = await screen.findByRole("alert");
+		expect(alert.textContent).toContain("Tu cuenta se creó");
+		expect(useAuthStore.getState().status).toBe("guest");
+		expect(localStorage.getItem(SESSION_TOKEN_KEY)).toBeNull();
+	});
+
+	it("shows a friendly generic banner for an unexpected registration failure", async () => {
+		const user = userEvent.setup();
+		vi.spyOn(authService, "register").mockRejectedValue(new Error("boom"));
+		render(<SignupForm />);
+
+		await fillValidForm(user);
+		await user.click(submitButton());
+
+		const alert = await screen.findByRole("alert");
+		expect(alert.textContent).toBeTruthy();
+		expect(alert.textContent).not.toContain("boom");
+	});
+
+	it("shows a friendly generic banner for an uncovered AuthError code", async () => {
+		const user = userEvent.setup();
+		vi.spyOn(authService, "register").mockRejectedValue(
+			new AuthError("api_key", "detalle interno", 403),
+		);
+		render(<SignupForm />);
+
+		await fillValidForm(user);
+		await user.click(submitButton());
+
+		const alert = await screen.findByRole("alert");
+		expect(alert.textContent).toBeTruthy();
+		expect(alert.textContent).not.toContain("detalle interno");
 	});
 });
