@@ -49,37 +49,42 @@
     `usuario`, `400` de duplicado vs. campos faltantes, `429`, logout
     local-autoritativo cuando la API rechaza.
 
-- [ ] **T8. Conectar SigninForm al flujo real.** RF-03, RF-06
+- [x] **T7. Conectar SigninForm al flujo real.** RF-03, RF-06
   - Hecho cuando: con mock, un login válido guarda token y redirige a `/`;
     credenciales inválidas muestran banner genérico conservando datos; `429` del
     backend muestra su mensaje; el botón entra en estado de carga; los botones
     sociales quedan deshabilitados con "Próximamente"; el link "¿Olvidaste tu
     contraseña?" queda visible **sin `href` ni atributo `forgot-password`**.
 
-- [ ] **T9. Conectar SignupForm al flujo real.** RF-01, RF-02
+- [x] **T8. Conectar SignupForm al flujo real.** RF-01, RF-02
   - Hecho cuando: con mock, un registro válido encadena login y redirige a `/`
     enviando la clave `usuario`; un correo duplicado muestra el error junto al
     campo email conservando datos; un `400` de campos faltantes muestra el
     mensaje del backend sin marcarlo como email duplicado; las 4 reglas se ven
     en vivo bloqueando el envío.
 
-- [ ] **T10. Arranque y recuperación de sesión.** RF-04
+- [x] **T9. Arranque y recuperación de sesión.** RF-04
   - Hecho cuando: `__root.tsx` invoca `restoreSession` al montar y muestra una
     pantalla de carga mínima; con token vigente la app entra directo a `/` y
     `/auth/signin`|`/auth/signup` redirigen a `/`; con token expirado o
     corrupto la limpia y muestra signin. Se cubre la recarga de página.
 
-- [ ] **T11. Tests de componente SigninForm/SignupForm.** RF-01, RF-02, RF-03, RF-06
+- [x] **T10. Tests de componente SigninForm/SignupForm.** RF-01, RF-02, RF-03, RF-06
   - Dependencias aprobadas (2026-10-02): `jsdom` + `@testing-library/react` +
     `@testing-library/user-event`. Tarea **no condicional** de esta iteración.
   - Hecho cuando: `tests/auth/signin-form.test.tsx` y
     `tests/auth/signup-form.test.tsx` pasan en verde montando ambos formularios
     con `@testing-library/react` y verificando envío, bloqueo por reglas, banner
     de error de login y botones sociales deshabilitados.
+  - Nota (2026-10-04): para verificar los botones sociales deshabilitados
+    montando `SignupForm`, el bloque social (Google/GitHub `disabled` +
+    "Próximamente") y su separador se movieron de `src/routes/auth/signup.tsx`
+    a `src/components/auth/signup-form.tsx`, espejo del patrón de SigninForm
+    (decisión del escalamiento de T8).
 
-- [ ] **T12 (DIFERIDA — fuera de esta iteración). E2E de auth.** RF-01,
+- [ ] **T11 (DIFERIDA — fuera de esta iteración). E2E de auth.** RF-01,
   RF-03, RF-04, RF-05
-  - `@playwright/test` **no se aprueba y no se instala**; el E2E se retomará
+  - `MCP chrome-devtools` **no se aprueba y no se instala**; el E2E se retomará
     cuando la app esté terminada (excepción documentada al principio 4,
     "E2E para los flujos críticos"; ver plan.md §6.2).
   - **No se ejecuta ahora.** Cuando se retome, cubrirá registro→dashboard,
@@ -92,8 +97,8 @@
 
 - **Spec 001-auth aprobada** tal cual tras la revisión QA.
 - **Opción B** para tests: se aprueban `jsdom`,
-  `@testing-library/react` y `@testing-library/user-event`; T11 no condicional.
-- **E2E diferido**: `@playwright/test` no se aprueba; T12 queda fuera de esta
+  `@testing-library/react` y `@testing-library/user-event`; T10 no condicional.
+- **E2E diferido**: `MCP chrome-devtools` no se aprueba; T11 queda fuera de esta
   iteración como deuda técnica (excepción al principio 4, justificada en que la
   app no está terminada).
 - `docs/scope.md` no se modifica (documento de referencia futura, no rector).
