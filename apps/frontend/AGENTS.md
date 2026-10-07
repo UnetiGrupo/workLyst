@@ -9,7 +9,7 @@
 
 - Ejecutar: `pnpm dev` · Build: `pnpm build` · Rutas: `pnpm generate-routes`
 - Lint/formato: `pnpm lint` / `pnpm check`
-- Tests: aún no existen (meta de la constitución, se definirán con su spec)
+- Tests: `pnpm test` (Vitest + jsdom + Testing Library)
 
 ## Estilo y convenciones
 
