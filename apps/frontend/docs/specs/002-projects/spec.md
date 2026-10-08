@@ -1,6 +1,6 @@
 # Spec 002 — Proyectos (vista y CRUD)
 
-Estado: borrador — pendiente de aprobación
+Estado: aprobada · v2.1 simplificación editorial
 
 > Fase 1 del alcance (docs/scope.md). Cubre la vista de proyectos para miembros
 > autenticados con su CRUD completo: la UI de la vista y las operaciones de
@@ -24,10 +24,8 @@ Criterio rector (decisión del usuario): mínimo viable bien hecho — el mínim
 estricto de archivos y componentes reutilizando los existentes, con calidad y
 responsive de móvil a escritorio.
 
-**Cambio de requisito (v2 de esta spec)**: la versión anterior definía solo la
-UI con botones inertes y datos mock estáticos; el usuario pidió funcionalidad
-real, como la de auth. El enfoque «UI primero, lógica después» queda relegado
-al módulo de tareas (specs futuras), no a esta spec de proyectos.
+**Cambio de requisito (v2)**: el usuario pidió CRUD real sobre servicios (como
+auth), no UI con botones inertes; «UI primero» queda para las specs de tareas.
 
 ### Nota de arquitectura (decisión del usuario)
 
@@ -192,7 +190,8 @@ la anterior dentro de su grupo.
   tecla Esc.
 - CA-05: al abrirse, el panel recibe el foco con rol de diálogo y etiqueta
   accesible («Filtros»), y lo atrapa mientras permanece abierto (Tab/Shift+Tab
-  no salen de él); en móvil ocupa todo el ancho de pantalla.
+  no salen de él); en móvil ocupa todo el ancho de pantalla, también si el
+  ancho cambia a móvil con el panel ya abierto (el overlay sigue bloqueando).
 - CA-06: MIENTRAS el panel está abierto, EL SISTEMA no permitirá interactuar
   con la vista subyacente; al cerrarse, el foco vuelve al botón de filtros.
 
@@ -202,6 +201,8 @@ acumulativa: un proyecto se muestra solo si cumple todos a la vez.
 
 - CA-01: SI la combinación no deja ningún proyecto, ENTONCES se muestra el
   estado vacío (RF-11).
+- CA-02: SI el miembro limpia la búsqueda, ENTONCES el grid conserva el chip y
+  los refinamientos activos (cada filtro cambia de forma independiente).
 
 **RF-07: KPIs del espacio de trabajo**
 EL SISTEMA mostrará cuatro KPIs derivados de la lista completa del espacio de
@@ -481,41 +482,6 @@ acción espera su respuesta mostrando estado de carga).
 | RNF-08 | Política de comentarios vigente: mínimos y sin referencias a identificadores de la spec (RF/RNF/CA/CL).                                     |
 | RNF-09 | Errores siempre con mensaje en español, amable y no técnico, nunca vacío ni con detalle del backend (patrón auth); cada acción con estado de carga perceptible y sin doble envío. |
 
-## Casos límite
-
-- CL-01: búsqueda/chip/refinamiento sin resultados → estado vacío con
-  «Limpiar filtros» (RF-11 CA-01).
-- CL-02: nombre o descripción muy largos → truncado con elipsis, tarjeta
-  estable.
-- CL-03: más de 3 miembros → 3 avatares + «+N».
-- CL-04: progreso 0 y 100 → barra vacía/llena con el color de su umbral.
-- CL-05: proyecto quitado de favoritos con el chip «Favoritos» activo →
-  desaparece del grid al resolverse el servicio y el foco pasa al contenedor
-  del grid.
-- CL-06: recarga de la página → en modo mock la lista vuelve a la sembrada
-  (favoritos y cambios incluidos); búsqueda, chip y refinamientos vuelven
-  siempre al estado inicial. En modo real la lista y los favoritos persisten
-  en el backend.
-- CL-07: drawer abierto al cambiar a ancho móvil → panel a ancho completo,
-  overlay sigue bloqueando.
-- CL-08: término de búsqueda con solo espacios → tratado como sin búsqueda.
-- CL-09: limpiar la búsqueda → el grid conserva el chip y los refinamientos
-  activos.
-- CL-10: nombre del formulario con solo espacios → envío deshabilitado con
-  «El nombre es obligatorio».
-- CL-11: error del servicio al crear/editar → el modal conserva lo escrito,
-  muestra el error en español y permite reintentar o cancelar.
-- CL-12: archivar o eliminar el último proyecto → estado vacío «Aún no hay
-  proyectos» con «Nuevo proyecto» (RF-11 CA-02).
-- CL-13: pulsar dos veces un envío o confirmación → deshabilitado durante la
-  mutación, sin doble efecto.
-- CL-14: error al alternar favorito → el estado no cambia y se muestra un
-  mensaje amable.
-- CL-15: descripción vacía → la tarjeta no muestra el bloque de descripción.
-- CL-16: editar un proyecto que deja de cumplir los filtros activos (p. ej.
-  cambiar el tipo con refinamiento de tipo activo) → la tarjeta desaparece
-  del grid y el foco pasa al contenedor del grid.
-
 ## Fuera de alcance (esta versión)
 
 - Vista de detalle del proyecto, tableros Kanban/Scrum y tareas (specs
@@ -534,118 +500,25 @@ acción espera su respuesta mostrando estado de carga).
 
 ## Criterios de finalización
 
-1. La vista de proyectos muestra, para un miembro: cabecera que conserva
-   breadcrumbs, campana y avatar y añade búsqueda y botón «Nuevo proyecto»
-   (solo en esta vista; barra lateral y navegación inferior intactas),
-   título «Proyectos», sección «Espacio de trabajo» con chips y botón de
-   filtros, los 4 KPIs y el grid; las demás vistas no cambian y un visitante
-   es redirigido al inicio de sesión.
-2. La búsqueda filtra en vivo por nombre; los chips filtran de forma
-   excluyente (pulsar el activo no lo desactiva; solo «Todos» limpia); los
-   refinamientos del drawer (tipo y estado, selección única por grupo) se
-   aplican en vivo y se combinan con búsqueda y chip; «Limpiar filtros»
-   restablece todo y el botón de filtros muestra el contador (0 a 2) de
-   grupos activos.
-3. El drawer se despliega desde la derecha sobre overlay con rol de diálogo
-   y etiqueta accesible, recibe y atrapa el foco, se cierra por
-   cierre/overlay/Esc devolviendo el foco al botón de filtros, y en móvil
-   ocupa todo el ancho.
-4. Los KPIs (activos, en riesgo, vencen pronto, completados) reflejan la
-   lista completa del espacio de trabajo, no varían con los filtros, muestran
-   sus subtítulos fijados y se recalculan tras cada mutación.
-5. Cada tarjeta muestra tipo (etiqueta común), fase como chip al estilo del
-   sprint del dashboard, badge de estado con color semántico, nombre,
-   descripción (omitiendo el bloque si está vacía), avatares (3 + «+N»),
-   progreso con barra y umbral de color, estrella de favorito y menú de
-   acciones operativo.
-6. El grid escala 1/2/3 columnas (1 en móvil, 2 desde sm, 3 desde md) sin
-   scroll horizontal desde 320 px; textos largos se truncan; los dos estados
-   vacíos aparecen según su causa (filtros → «No se encontraron proyectos»
-   con «Limpiar filtros»; cero proyectos → «Aún no hay proyectos» con
-   «Nuevo proyecto»).
-7. El CRUD funciona de verdad vía servicio: «Nuevo proyecto» abre el modal
-   vacío, crea y el proyecto aparece; «Editar» precarga el modal y guarda;
-   «Archivar» y «Eliminar» piden confirmación en diálogo propio y aplican;
-   los favoritos se alternan vía servicio y el chip «Favoritos» los refleja;
-   el foco nunca se pierde al desaparecer tarjetas.
-8. La carga inicial muestra el indicador de carga en el grid y el skeleton
-   en la fila de KPIs; el fallo de lista muestra mensaje con «Reintentar»;
-   los fallos de mutación conservan los datos escritos y muestran el error
-   en español; todo envío/confirmación con estado de carga y sin doble
-   envío.
-9. La capa de servicios replica el patrón de auth en `src/lib/projects/`:
-   interfaz, adaptador mock (memoria, latencia, errores del contrato, reset
-   para tests) y adaptador api contra el contrato del RF-14, con switch por
-   `VITE_API_MODE` y default mock; los componentes no conocen el origen de
-   los datos; la capa expone el modelo de UI ya normalizado y la vista se
-   orquesta desde un único hook propio (lista, filtros, estados y
-   mutaciones); el contrato queda documentado como encargo al backend.
-10. Los mocks cubren el panorama del RF-12 CA-01 (incluidos progreso 0 y 100)
-    con fechas relativas y textos realistas en español.
-11. Los tests mínimos pasan en verde con el stack aprobado (componentes
-    públicos, funciones puras, servicio mock, integración de la vista), la
-    suite existente (158 tests) sin regresiones y `pnpm check` limpio.
-12. Ningún comentario de código o tests referencia identificadores de la spec
-    (RF/RNF/CA/CL).
+La cobertura funcional se valida RF por RF: sus CA son el checklist. Globales
+de cierre: suite completa en verde con los 158 tests existentes sin reducción
+(`VITE_API_MODE=mock`), `pnpm check` limpio, cero coincidencias
+`RF-/RNF-/CA-/CL-` en `src/` y `tests/`, y smoke de cabecera por rutas.
 
-## Dudas abiertas
+## Dudas abiertas y decisiones delegadas
 
-Ninguna bloqueante. Pendientes gestionados fuera de esta spec:
-
-1. Confirmar el contrato REST (RF-14) con el backend; hasta entonces el
-   adaptador api queda inactivo (default mock) y el encargo se registra en
-   Linear (label `Proyectos`).
-2. Reconciliar la ubicación de la capa (`src/lib/projects/`, estilo auth) con
-   la arquitectura `src/services/` prevista en docs/scope.md.
-
-Decisiones de diseño delegadas por el usuario y fijadas en esta spec
-(revisables al aprobar):
-
-1. Chips: Todos, Favoritos, Nuevos, En riesgo (excluyentes entre sí; pulsar
-   el chip activo no lo desactiva, solo «Todos» limpia).
-2. Refinamientos del drawer: tipo y estado (set mínimo), selección única por
-   grupo con «Todos» y contador 0–2; aplicación en vivo, sin botón
-   «Aplicar».
-3. KPIs: Activos, En riesgo, Vencen pronto (≤7 días), Completados, con
-   subtítulos fijados y componente propio de la vista.
-4. Campos del formulario: nombre (obligatorio), descripción (opcional) y
-   plantilla Kanban/Scrum (Kanban por defecto); sin más campos. Valores por
-   defecto al crear: estado «activo», progreso 0, favorito no, fase «Sprint
-   1» (Scrum) / «Planeación» (Kanban), fecha de creación hoy, sin fecha
-   límite y el usuario de la sesión como único miembro: la vista pasa su
-   nombre visible (nombre de la sesión o, restaurada sin nombre, el correo
-   como fallback de las iniciales) y el servicio lo recibe por parámetro,
-   sin leer la sesión.
-5. Archivar quita el proyecto del espacio de trabajo (grid, filtros y KPIs)
-   sin UI de desarchivar en esta versión; eliminar es permanente y siempre
-   pide confirmación con estilo de peligro.
-6. Sin actualización optimista: cada acción muestra su estado de carga y la
-   vista cambia solo con la respuesta del servicio (mínimo sin lógica de
-   rollback; la latencia simulada es corta).
-7. Favoritos persistidos vía servicio: en mock viven en memoria y se pierden
-   al recargar (coherente con el mock de auth; la constitución, principio 5,
-   prohíbe guardar datos de usuario en localStorage); en modo real los
-   persiste el backend.
-8. Contrato REST propuesto en RF-14 (endpoints, payloads, envolturas y
-   mensajes de error) como encargo al backend; el mock reproduce sus
-   validaciones y textos.
-9. Iniciales y color de avatar de los miembros derivados en cliente (funciones
-   puras) desde la lista de nombres del contrato.
-10. Vista protegida: visitante redirigido al inicio de sesión, como el
-    dashboard; búsqueda solo por nombre.
-11. Sin E2E en esta spec: los flujos se prueban a nivel de componente con el
-    servicio mock (excepción documentada como en auth; E2E al terminar la
-    app).
-12. Orquestación de la vista en un hook propio junto a su ruta, sin store
-    global: el estado es local a la vista y la constitución pide la lógica
-    en hooks con la UI solo renderizando (auth usa store porque la sesión
-    es global).
-13. Normalización al modelo de UI dentro del módulo de servicios de
-    proyectos (`en_riesgo` → «en riesgo», `members: [{id,name}]` → lista de
-    nombres, `archived` descartado): la UI nunca ve el formato del contrato.
-14. Comparación de fechas a día completo en zona local (parseo a medianoche
-    local, hoy = 0) como función pura testeable: «nuevo» ≤ 14 y «vence
-    pronto» ≤ 7 con vencidos incluidos, sin off-by-one.
-15. Sin campo «archivado» en el modelo de UI: la lista ya trae solo
-    proyectos no archivados y archivar quita la tarjeta; `archived` queda
-    como dato interno del contrato y el servicio.
+Ninguna duda bloqueante. Las decisiones de diseño delegadas por el usuario ya
+están fijadas en esta spec y son verificables en los RF citados: chips
+excluyentes (RF-04), refinamientos del drawer (RF-05), KPIs (RF-07), campos
+del formulario y valores por defecto al crear (RF-15 CA-01/CA-03), archivar
+quita y eliminar permanente (RF-16), sin actualización optimista (RF-18),
+favoritos vía servicio (RF-10/RF-13), contrato REST como encargo (RF-14),
+iniciales y color de avatar en cliente (RF-09), vista protegida y búsqueda
+solo por nombre (RF-01 CA-01, RF-02), sin E2E (RNF-06), hook propio sin store
+(Nota de arquitectura, RNF-05), normalización al modelo de UI (RF-13),
+comparación de fechas a día local (Definiciones) y sin campo «archivado» en
+el modelo de UI (Definiciones). Pendientes gestionados fuera de esta spec:
+confirmar el contrato REST (RF-14) con el backend —hasta entonces el
+adaptador api queda inactivo y el encargo se registra en Linear con label
+`Proyectos`— y reconciliar la ubicación de la capa (`src/lib/projects/`,
+estilo auth) con la arquitectura `src/services/` de docs/scope.md.

@@ -126,12 +126,6 @@ confirmAction():                        // diálogo: archivar o eliminar
   finally → confirmPending = false
 ```
 
-**Valores por defecto al crear (RF-15 CA-03, los asigna el servicio):**
-```
-estado "activo", progreso 0, favorito no, fase "Sprint 1" (scrum) / "Planeación" (kanban),
-createdAt = hoy, dueDate = null, members = [memberName], archived = false
-```
-
 **Selección de adaptador (RF-13 CA-01, patrón auth):**
 ```
 getProjectsService():
@@ -167,44 +161,31 @@ trap de foco: manejo propio de Tab/Shift+Tab dentro del overlay mientras permane
 
 ### 6.1 Capa de servicios (patrón auth, `src/lib/projects/`)
 
-Replica la estructura del módulo de auth ya funcionando (Nota de arquitectura de la
-spec): contrato + adaptador real + fábrica en `projects-api.ts`, fixtures/estado
-simulado en `projects-mock.ts` (separado por responsabilidad real, cambio v1.1 de
-auth), tipos compartidos en `types.ts`. La desviación frente al patrón genérico de
-`docs/scope.md` (`src/services/`) está documentada y aceptada en la spec; se
-reconciliará fuera de esta spec.
-
-La normalización contrato→UI (`en_riesgo` → «en riesgo», `members: [{id,name}]` →
-lista de nombres, `archived` descartado) vive en `toUiProject`, dentro del módulo y
-compartido por ambos adaptadores: la UI y las funciones puras nunca ven el formato
-del cable. El mock siembra en formato de contrato (como lo devolvería el backend) y
-normaliza al salir; así el mock ejercita la misma traducción que el adaptador real.
-
-Los errores se traducen a `ProjectsError` (patrón `AuthError`): 400 «El nombre del
-proyecto es obligatorio», 404 «Proyecto no encontrado», 401 sesión no válida
-(mensaje amable), 403 API key (nunca expone su detalle), sin respuesta → red, resto
-→ genérico amable.
+Replica la estructura del módulo de auth ya funcionando (Nota de arquitectura
+de la spec): contrato + adaptador real + fábrica en `projects-api.ts`,
+estado simulado en `projects-mock.ts`, tipos compartidos en `types.ts`. La
+normalización contrato→UI vive en `toUiProject`, dentro del módulo y
+compartido por ambos adaptadores: el mock siembra en formato de contrato y
+normaliza al salir, ejercitando la misma traducción que el adaptador real
+(la UI y las funciones puras nunca ven el formato del cable). Los errores se
+traducen a `ProjectsError` (patrón `AuthError`) con los mensajes y códigos
+de RF-14 CA-03.
 
 ### 6.2 Ranura de la cabecera
 
-El estado de búsqueda es local a la vista (spec: estado local a la ruta) pero su
-input se pinta en la cabecera, que vive en la shell por encima de la ruta. La
-ranura por registro resuelve la tensión: la vista crea los controles (con el estado
-del hook en su closure) y los registra; la cabecera los pinta donde toca. Una sola
-cabecera parametrizada, cero duplicación, y las demás vistas no cambian porque no
-registran nada.
+La búsqueda es estado local a la vista pero su input se pinta en la cabecera
+de la shell, por encima de la ruta: la ranura por registro (§5) lo resuelve
+sin duplicar cabecera ni acoplar el layout a proyectos (§9.1); las demás
+vistas no cambian porque no registran nada.
 
 ### 6.3 Hook de orquestación único (`src/hooks/use-projects.ts`)
 
-La spec fija la orquestación en un hook propio junto a la ruta, sin store global
-(auth usa store porque la sesión sí es global; aquí nada fuera de la vista consume
-el estado). El hook expone a la UI solo el modelo ya normalizado: lista y estados
-(`listStatus`), filtros y derivados (`visibleProjects`, `kpis`,
-`activeRefinementCount`, vacíos), overlays (`drawerOpen`, `modal`, `confirm`) y
-mutaciones con sus estados de carga y error (`formPending/formError`,
-`confirmPending/confirmError`, `favoritePendingId`, `actionError`). El servicio se
-inyecta como parámetro con default `projectsService` para sustituirlo por un doble
-en los tests (RNF-06).
+La spec fija la orquestación en un hook propio junto a la ruta, sin store
+global (auth usa store porque la sesión sí es global; aquí nada fuera de la
+vista consume el estado). El hook expone a la UI solo el modelo ya
+normalizado (superficie completa en T5) e inyecta el servicio como parámetro
+con default `projectsService` para sustituirlo por un doble en los tests
+(RNF-06).
 
 ### 6.4 Foco y accesibilidad
 
@@ -216,39 +197,25 @@ la duplicación mínima del trap es el precio de la decisión de mínimo de arch
 
 ## 7. Pintado en la interfaz
 
-- **Cabecera**: zona de acciones con `SearchBar` común (placeholder «Buscar
-  proyectos...») + `Button` primario «Nuevo proyecto» tal cual; segunda fila bajo
-  768 px, junto a los breadcrumbs a partir de 768 px (RNF-03).
-- **Sección «Espacio de trabajo»**: fila con chips (Todos/Favoritos/Nuevos/En
-  riesgo, desplazamiento horizontal en móvil, uno activo con estilo distinguible)
-  y botón de filtros con contador 0–2 como badge (oculto en 0).
-- **KPIs**: `grid-cols-2 md:grid-cols-4`; tarjeta con icono, título, valor mono y
-  subtítulo fijo («de N proyectos totales» usa el total); skeleton `animate-pulse`
-  con la misma forma mientras carga.
-- **Grid**: `grid-cols-1 sm:grid-cols-2 md:grid-cols-3` (patrón del dashboard);
-  contenedor enfocable (`tabIndex -1`); skeleton de tarjetas durante la carga;
-  cero scroll horizontal desde 320 px.
-- **Tarjeta**: `Tag` común para el tipo; fase como chip tiza (patrón sprint del
-  dashboard); badge de estado (activo → primario, en riesgo → rojo, completado →
-  verde); nombre con truncate; descripción `line-clamp` omitida si vacía; avatares
-  apilados `size-6` con borde y «+N»; barra `h-1.5` con umbrales verde ≥80 / azul
-  ≥50 / ámbar ≥25 / gris <25 + % mono; estrella lucide con `aria-label` y disabled
-  en vuelo; menú ⋯ con panel flotante (Editar/Archivar/Eliminar), cierre por
-  opción/fuera/Esc; el cuerpo de la tarjeta sin navegación.
-- **Estados del grid**: carga (skeletons), error (mensaje amable + «Reintentar»),
-  vacío por filtros («No se encontraron proyectos» + «Limpiar filtros»), vacío real
-  («Aún no hay proyectos» + «Nuevo proyecto»), banner breve para el error de
-  favorito.
-- **Drawer**: overlay + panel derecho a ancho completo en móvil; grupos tipo
-  (Todos/Kanban/Scrum) y estado (Todos/Activo/En riesgo/Completado) como radios
-  estilizados; «Limpiar filtros»; botón de cierre con `aria-label`.
-- **Modal**: overlay + tarjeta centrada con ancho máximo (casi completa en
-  móvil); `Input` común para el nombre con «El nombre es obligatorio»; área de
-  texto para la descripción con el look del `Input`; plantilla como selección
-  única Kanban/Scrum; «Crear proyecto»/«Guardar cambios» (primario, con estado de
-  carga) + «Cancelar» (brand).
-- **Diálogo de confirmación**: textos fijados por la spec con el nombre del
-  proyecto; «Eliminar» en rojo semántico; estado de carga en el botón de acción.
+Solo lo visual no fijado por la spec (contenido, textos y estados viven en
+los RF):
+
+- **Cabecera**: `SearchBar` + `Button` primario tal cual en la zona de acciones
+  (disposición responsiva en RNF-03).
+- **Espacio de trabajo**: chips con desplazamiento horizontal en móvil; botón
+  de filtros con el contador como badge, oculto en 0.
+- **KPIs y grid**: `grid-cols-2 md:grid-cols-4` y `grid-cols-1 sm:grid-cols-2
+  md:grid-cols-3` (patrón del dashboard); contenedor enfocable (`tabIndex
+  -1`); skeletons `animate-pulse` con la forma del contenido real; valor de
+  KPI en mono.
+- **Tarjeta**: contenido y colores según RF-09/RF-10; fase como chip tiza
+  (patrón sprint del dashboard); nombre `truncate` y descripción
+  `line-clamp`; avatares apilados `size-6` con borde; barra `h-1.5` + % mono;
+  estrella lucide; menú ⋯ con panel flotante.
+- **Overlays**: drawer a ancho completo en móvil con radios estilizados por
+  grupo; modal como tarjeta centrada con ancho máximo (casi completa en
+  móvil), `Input` común y textarea con su look; «Eliminar» en rojo semántico;
+  botones de acción con estado de carga.
 
 ## 8. Estrategia de tests
 
@@ -286,7 +253,8 @@ de navegador por ruta como comprobación manual de cortesía, no como E2E.
 1. **Ranura de cabecera por contexto de registro** (`HeaderActionsProvider` +
    `HeaderSlot` co-localizados en `header.tsx`) — mantiene el estado de búsqueda
    local a la vista y una sola cabecera. *Descartado parámetro de búsqueda en la
-   URL*: persistiría al recargar contra CL-06. *Descartado que la cabecera decida
+   URL*: persistiría al recargar contra RF-13 CA-02 (re-siembra del mock) y
+   el fuera de alcance de la persistencia de filtros. *Descartado que la cabecera decida
    por pathname y monte los controles*: acoplaría el layout a proyectos y el estado
    dejaría de ser local a la ruta. *Descartado portal al DOM de la cabecera*:
    rompe en SSR y añade plomería sin beneficio.
