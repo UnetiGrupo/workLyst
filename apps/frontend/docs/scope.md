@@ -1,3 +1,5 @@
+> ESTE DOCUMENTO NO SE TENDRA EN CUENTA A LA HORA DE CREAR SPECS
+
 # ALCANCE — Worklyst v2 (Frontend)
 
 > Documento de alcance y visión de producto. Actualizado: 2026-10-01.

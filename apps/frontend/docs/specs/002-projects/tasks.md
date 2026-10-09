@@ -6,7 +6,7 @@
 
 ## Fase A — Módulo y lógica (T1–T3)
 
-- [ ] **T1. Funciones puras del módulo de proyectos + tests.** RF-02, RF-04,
+- [x] **T1. Funciones puras del módulo de proyectos + tests.** RF-02, RF-04,
   RF-06, RF-07 · RF-09 (avatares), RF-15 (predicado/precarga)
   - Crear los módulos puros de §2/§4 del plan: `types.ts`,
     `project-filters.ts` (fechas a día local, filtrado combinado, conteos de
@@ -19,7 +19,7 @@
   - Hecho cuando: los tres test files pasan en verde sin React ni IO, con
     `daysBetween` parseando a medianoche local (nunca `new Date("YYYY-MM-DD")`).
 
-- [ ] **T2. Contrato de servicio + adaptador api + fábrica + Bearer + tests.**
+- [x] **T2. Contrato de servicio + adaptador api + fábrica + Bearer + tests.**
   RF-13, RF-14 · depende de T1
   - Extender `src/lib/projects/types.ts` si hace falta y crear
     `src/lib/projects/projects-api.ts`: interfaz `ProjectsService` (list, create,
@@ -41,7 +41,7 @@
     modo ausente/desconocido y api con `api`/`real`, y los 158 tests de auth
     siguen en verde tras el movimiento de la constante y el interceptor.
 
-- [ ] **T3. Adaptador mock + tests.** RF-12, RF-13 CA-02/03, RF-15 CA-03 ·
+- [x] **T3. Adaptador mock + tests.** RF-12, RF-13 CA-02/03, RF-15 CA-03 ·
   depende de T2
   - Crear `src/lib/projects/projects-mock.ts`: lista sembrada en memoria en
     formato de contrato que cubre el panorama y las fechas relativas de RF-12
@@ -58,7 +58,7 @@
 
 ## Fase B — Vista, hook e integración (T4–T9)
 
-- [ ] **T4. Cabecera parametrizada con ranura condicional + tests.** RF-01,
+- [x] **T4. Cabecera parametrizada con ranura condicional + tests.** RF-01,
   RF-02, RF-03 · RNF-03 (cabecera), independiente de T1–T3
   - Modificar `src/components/layout/header.tsx`: contexto interno `HeaderActions`
     con `HeaderActionsProvider` y `HeaderSlot` (registro al montar, desregistro al
@@ -73,7 +73,7 @@
   - Hecho cuando: el test file pasa en verde, ninguna otra vista registra
     controles y la cabecera de las demás rutas no cambia visualmente.
 
-- [ ] **T5. Hook de orquestación `useProjects` + tests con doble.** RF-13
+- [x] **T5. Hook de orquestación `useProjects` + tests con doble.** RF-13
   (consumo), RF-17, RF-18 · depende de T1, T2
   - Crear `src/hooks/use-projects.ts`: `useProjects(service = projectsService)`
     con carga al montar (guard contra doble disparo) y reintento, estados
@@ -93,7 +93,7 @@
   - Hecho cuando: el test file pasa en verde cubriendo carga, error con
     reintento y las cinco mutaciones contra el doble, sin tocar el mock.
 
-- [ ] **T6. Tarjeta de proyecto + KPIs + tests.** RF-07, RF-09, RF-10 · depende
+- [x] **T6. Tarjeta de proyecto + KPIs + tests.** RF-07, RF-09, RF-10 · depende
   de T1
   - Crear `src/components/projects/project-card.tsx` y
     `src/components/projects/workspace-kpis.tsx` según los CA de RF-09/RF-10 y
@@ -107,7 +107,7 @@
   - Hecho cuando: ambos test files pasan en verde con componentes mudos (solo
     props y callbacks, cero lógica de datos dentro).
 
-- [ ] **T7. Drawer de filtros + tests.** RF-05 · RNF-07 · depende de T1
+- [x] **T7. Drawer de filtros + tests.** RF-05 · RNF-07 · depende de T1
   - Crear `src/components/projects/filters-drawer.tsx`: panel desde el borde
     derecho sobre overlay (ancho completo en móvil), grupos tipo y estado como
     selección única con «Todos», «Limpiar filtros», botón de cierre con
@@ -120,7 +120,7 @@
   - Hecho cuando: el test file pasa en verde y el drawer no permite interactuar
     con la vista subyacente mientras permanece abierto (overlay).
 
-- [ ] **T8. Modal único de crear/editar + diálogo de confirmación + tests.**
+- [x] **T8. Modal único de crear/editar + diálogo de confirmación + tests.**
   RF-15, RF-16 · RNF-07 · depende de T1
   - Crear `src/components/projects/project-form-modal.tsx` y
     `src/components/projects/confirm-dialog.tsx` cubriendo los CA de RF-15 y
@@ -137,7 +137,7 @@
   - Hecho cuando: ambos test files pasan en verde y ningún flujo usa `confirm()`
     nativo.
 
-- [ ] **T9. Vista de proyectos + integración + tests.** RF-01…RF-18
+- [x] **T9. Vista de proyectos + integración + tests.** RF-01…RF-18
   (integración, con sus CA) · depende de T4–T8
   - Sustituir el placeholder de `src/routes/projects.tsx` por `Route` +
     `ProjectsView` (exportada): guard de visitante (redirección a
@@ -160,7 +160,7 @@
 
 ## Cierre (T10)
 
-- [ ] **T10. Verificación global.** Todos los RF · RNF-06, RNF-08
+- [x] **T10. Verificación global.** Todos los RF · RNF-06, RNF-08
   - Suite completa en verde (`pnpm test`: los 158 tests existentes más los
     nuevos, sin reducciones), `pnpm check` limpio, y búsqueda de `RF-`, `RNF-`,
     `CA-` y `CL-` sobre `src/` y `tests/` sin resultados (comentarios mínimos y
@@ -174,6 +174,17 @@
   - Hecho cuando: todo lo anterior se cumple y los criterios de finalización de
     la spec quedan cubiertos (el encargo al backend de RF-14 se registra en
     Linear fuera de estas tareas).
+  - Nota (2026-10-08): verificación completa. Parte estática: `pnpm test` en
+    verde (25 archivos / 357 tests), `pnpm check` limpio tras una corrección de
+    formato, y búsqueda de `RF-`/`RNF-`/`CA-`/`CL-` sobre `src/` y `tests/` sin
+    resultados. Smoke de navegador (`pnpm dev`, modo mock, sesión
+    `demo@worklyst.com`): sin sesión `/projects` redirige a `/auth/signin`; con
+    sesión `/projects` muestra la búsqueda «Buscar proyectos...» y el botón
+    «Nuevo proyecto» con la vista completa (h1, chips, KPIs, grid de 6
+    tarjetas), mientras `/`, `/groups`, `/messages` y `/settings` conservan su
+    cabecera sin búsqueda ni botón; sin scroll horizontal a 320 px (viewport
+    efectivo 501 px por el mínimo del navegador, `scrollWidth === innerWidth`)
+    ni a 1280 px.
 
 ---
 
