@@ -8,7 +8,7 @@ import {
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { useEffect, useRef, useState } from "react";
 import { BottomNav } from "#/components/layout/bottom-nav";
-import { Header } from "#/components/layout/header";
+import { Header, HeaderActionsProvider } from "#/components/layout/header";
 import { Sidebar } from "#/components/layout/sidebar";
 import { useAuthStore } from "#/stores/auth-store";
 import appCss from "../styles.css?url";
@@ -73,14 +73,14 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 			</head>
 			<body className="flex h-dvh">
 				{isBooted ? (
-					<>
+					<HeaderActionsProvider>
 						{showLayout && <Sidebar />}
 						<div className="flex flex-1 flex-col overflow-y-auto">
 							{showLayout && <Header />}
 							<main className="flex-1">{children}</main>
 						</div>
 						{showLayout && <BottomNav />}
-					</>
+					</HeaderActionsProvider>
 				) : (
 					<LoadingScreen />
 				)}
