@@ -4,6 +4,7 @@
  */
 import axios from "axios";
 
+import { SESSION_TOKEN_KEY } from "#/lib/auth/token";
 import { AuthError, type AuthErrorCode } from "#/lib/auth/types";
 
 /** Instancia axios con baseURL y API Key tomadas del entorno. */
@@ -12,6 +13,16 @@ export const api = axios.create({
 	headers: {
 		"x-api-key": import.meta.env.VITE_API_KEY,
 	},
+});
+
+// Token de sesión leído directamente de localStorage para no importar el
+// store (evitaría un ciclo store → auth-api → api).
+api.interceptors.request.use((config) => {
+	const token = globalThis.localStorage?.getItem(SESSION_TOKEN_KEY);
+	if (token) {
+		config.headers.set("Authorization", `Bearer ${token}`);
+	}
+	return config;
 });
 
 /** Forma mínima de un AxiosError que nos interesa aquí. */

@@ -1,5 +1,7 @@
-import { describe, expect, it } from "vitest";
+import type { AxiosAdapter, InternalAxiosRequestConfig } from "axios";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { api, toAuthError } from "#/lib/api";
+import { SESSION_TOKEN_KEY } from "#/lib/auth/token";
 import { AuthError } from "#/lib/auth/types";
 
 // Cliente HTTP central y mapeo de los errores del backend a `AuthError`.
@@ -126,5 +128,42 @@ describe("api instance", () => {
 			headers.common?.["x-api-key"] ??
 			(api.defaults.headers as Record<string, unknown>)["x-api-key"];
 		expect(apiKey).toBe(import.meta.env.VITE_API_KEY);
+	});
+});
+
+describe("api Authorization interceptor", () => {
+	afterEach(() => {
+		vi.restoreAllMocks();
+		localStorage.clear();
+	});
+
+	// Adapter propio para capturar la config ya pasada por los interceptores.
+	async function captureRequest(): Promise<InternalAxiosRequestConfig> {
+		let captured: InternalAxiosRequestConfig | undefined;
+		const adapter: AxiosAdapter = async (config) => {
+			captured = config;
+			return { data: {}, status: 200, statusText: "OK", headers: {}, config };
+		};
+
+		await api.get("/ping", { adapter });
+
+		if (!captured) {
+			throw new Error("el adapter no recibió la petición");
+		}
+		return captured;
+	}
+
+	it("adds the Bearer token when the session has one", async () => {
+		localStorage.setItem(SESSION_TOKEN_KEY, "token-123");
+
+		const config = await captureRequest();
+
+		expect(config.headers.get("Authorization")).toBe("Bearer token-123");
+	});
+
+	it("does not add the header when there is no session token", async () => {
+		const config = await captureRequest();
+
+		expect(config.headers.get("Authorization")).toBeUndefined();
 	});
 });

@@ -3,6 +3,9 @@
  * Funciones puras: sin IO y sin React.
  */
 
+/** Clave de almacenamiento del token de sesión (fuente única). */
+export const SESSION_TOKEN_KEY = "worklyst.session-token";
+
 /**
  * Decodifica una cadena base64url a texto.
  * No depende de `Buffer` (Node): usa `atob`, disponible en navegador y jsdom.

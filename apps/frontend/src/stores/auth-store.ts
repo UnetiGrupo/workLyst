@@ -1,10 +1,15 @@
 import { create } from "zustand";
 
 import { authService } from "#/lib/auth/auth-api";
-import { isTokenValid, readTokenClaims, sanitizeText } from "#/lib/auth/token";
+import {
+	isTokenValid,
+	readTokenClaims,
+	SESSION_TOKEN_KEY,
+	sanitizeText,
+} from "#/lib/auth/token";
 import type { AuthUser, Credentials, RegisterData } from "#/lib/auth/types";
 
-export const SESSION_TOKEN_KEY = "worklyst.session-token";
+export { SESSION_TOKEN_KEY };
 
 /** La cuenta se creó, pero el login encadenado no pudo abrir sesión. */
 export class RegisterSessionError extends Error {
